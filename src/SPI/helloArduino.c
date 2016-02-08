@@ -18,6 +18,7 @@
 
 #include <bcm2835.h>
 #include <stdio.h>
+#include <unistd.h>
 
 int fd;
 unsigned char hello[] = {'H','e','l','l','o',' ',
