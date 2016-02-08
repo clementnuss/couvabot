@@ -3,7 +3,7 @@
 // Example program for bcm2835 library
 // Shows how to interface with SPI to transfer a byte to and from an SPI device
 //
-// After installing bcm2835, you can build this 
+// After installing bcm2835, you can build this
 // with something like:
 // gcc -o spi spi.c -l bcm2835
 // sudo ./spi
@@ -18,7 +18,6 @@
 
 #include <bcm2835.h>
 #include <stdio.h>
-
 
 int fd;
 unsigned char hello[] = {'H','e','l','l','o',' ',
@@ -40,8 +39,8 @@ int main(int argc, char **argv)
     bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_65536); // The default
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                      // The default
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);      // the default
-	
-	
+
+
 	// Send a byte to the slave and simultaneously read a byte back from the slave
     // If you tie MISO to MOSI, you should read back what was sent
     uint8_t send_data = 0x23;
@@ -68,4 +67,3 @@ int main(int argc, char **argv)
     bcm2835_close();
     return 0;
 }
-
