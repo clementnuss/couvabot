@@ -15,18 +15,18 @@
 #define CW          0
 #define CCW         1
 
-//-------------------TO BE MODIFIED----------------------
-int STBY = 1; //standby
+//-------------------PINS TO CHANGE----------------------
+#define STBY  1 //standby
 
 //Motor A
-int PWMA = 1; //Speed control 
-int AIN1 = 1; //Direction
-int AIN2 = 1; //Direction
+#define PWMA  1 //Speed control 
+#define AIN1  1 //Direction
+#define AIN2  1 //Direction
 
 //Motor B
-int PWMB = 1; //Speed control
-int BIN1 = 1; //Direction
-int BIN2 = 1; //Direction
+#define PWMB  1 //Speed control
+#define BIN1  1 //Direction
+#define BIN2  1 //Direction
 //-------------------------------------------------------
 
 void motorDrive    (int select, int speed, int orientation);
