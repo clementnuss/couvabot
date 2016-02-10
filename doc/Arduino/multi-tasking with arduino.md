@@ -17,3 +17,4 @@ A rather simple way to do multi-tasking on a one-core processor like
  It allows us to execute an instruction at any time in the code, with complete priority, in response to an interupt 
  call. The interrupt function has to be declared at the beginning. 
  Some tips to know for the correct usage are given on the arduino [site](https://www.arduino.cc/en/Reference/AttachInterrupt).
+ Complete documentation on what you can do with all the interrupt tricks can be found [here](http://gammon.com.au/interrupts).
