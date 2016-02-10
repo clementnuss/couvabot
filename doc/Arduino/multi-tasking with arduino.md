@@ -11,7 +11,7 @@ A rather simple way to do multi-tasking on a one-core processor like
  
  The concept of multi-tasking is that instruction won't be executed one after another anymore, but at a certain time, using
  the millis() function. Like if you checked your watch to do something.
- The advantage is that until the time to do that something hasn't come, you can do anything else.
+ The advantage is that until that time hasn't come, you can do anything else.
  
  Another interesting possibility is the usage of Interrupts (described in tutorial two). 
  It allows us to execute an instruction at any time in the code, with complete priority, in response to an interupt 
