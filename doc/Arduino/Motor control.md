@@ -4,7 +4,7 @@ A simple source code and tutorial can be found [here](http://bildr.org/2012/04/t
 
 Be careful to wire your controller correctly, respect the nominal voltage of the motors and declare your pins correctly.
 A memory-optimisation possibility in the example source code is to declare the pins as constants, not as variables.
-The stop() function must be handled with care, since it only puts the motors on standby; that means that when you use
-the move() function to set a new speed, the previous speed of the second motor will be reactivated after shutting down
+The `stop()` function must be handled with care, since it only puts the motors on standby; that means that when you use
+the `move()` function to set a new speed, the previous speed of the second motor will be reactivated after shutting down
 the standby mode...
-This problem has been solved in motor.ino in the src folder.
+This problem has been solved in `motor.ino` in the src folder.
