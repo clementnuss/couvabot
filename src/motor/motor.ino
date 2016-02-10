@@ -15,18 +15,18 @@
 #define CW          0
 #define CCW         1
 
-//-------------------TO BE MODIFIED----------------------
-int STBY = 1; //standby
+//-------------------PINS TO CHANGE----------------------
+#define STBY_GEAR  1 //standby
 
 //Motor A
-int PWMA = 1; //Speed control 
-int AIN1 = 1; //Direction
-int AIN2 = 1; //Direction
+#define PWMA_GEAR  1 //Speed control 
+#define AIN1_GEAR  1 //Direction
+#define AIN2_GEAR  1 //Direction
 
 //Motor B
-int PWMB = 1; //Speed control
-int BIN1 = 1; //Direction
-int BIN2 = 1; //Direction
+#define PWMB_GEAR  1 //Speed control
+#define BIN1_GEAR  1 //Direction
+#define BIN2_GEAR  1 //Direction
 //-------------------------------------------------------
 
 void motorDrive    (int select, int speed, int orientation);
@@ -34,15 +34,15 @@ void motorStop     (void);
 void motorMaxSpeed (int orientation);
 
 void setup() {
-  pinMode(STBY, OUTPUT);  // Must be added in setup
+  pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
 
-  pinMode(PWMA, OUTPUT);
-  pinMode(AIN1, OUTPUT);
-  pinMode(AIN2, OUTPUT);
+  pinMode(PWMA_GEAR, OUTPUT);
+  pinMode(AIN1_GEAR, OUTPUT);
+  pinMode(AIN2_GEAR, OUTPUT);
 
-  pinMode(PWMB, OUTPUT);
-  pinMode(BIN1, OUTPUT);
-  pinMode(BIN2, OUTPUT);
+  pinMode(PWMB_GEAR, OUTPUT);
+  pinMode(BIN1_GEAR, OUTPUT);
+  pinMode(BIN2_GEAR, OUTPUT);
 }
 
 void loop(){
@@ -56,7 +56,7 @@ void motorDrive(int select, int speed, int orientation){
  * orientation : 0 clockwise, 1 counter-clockwise
  */
   
-  digitalWrite(STBY, HIGH); // Ensure not to be on standby
+  digitalWrite(STBY_GEAR, HIGH); // Ensure not to be on standby
 
   boolean direc1 = LOW;
   boolean direc2 = HIGH;
@@ -67,22 +67,22 @@ void motorDrive(int select, int speed, int orientation){
   }
   
   if(select == BOTH){
-    digitalWrite(AIN1, direc1);
-    digitalWrite(AIN2, direc2);
-    digitalWrite(BIN1, direc2);  // Assuming both motors are
-    digitalWrite(BIN2, direc1);  // in opposition on robot
-    digitalWrite(PWMA, speed);
-    digitalWrite(PWMB, speed);
+    digitalWrite(AIN1_GEAR, direc1);
+    digitalWrite(AIN2_GEAR, direc2);
+    digitalWrite(BIN1_GEAR, direc2);  // Assuming both motors are
+    digitalWrite(BIN2_GEAR, direc1);  // in opposition on robot
+    digitalWrite(PWMA_GEAR, speed);
+    digitalWrite(PWMB_GEAR, speed);
   }
   else if(select == MOTOR_A){
-    digitalWrite(AIN1, direc1);
-    digitalWrite(AIN2, direc2);
-    digitalWrite(PWMA, speed);
+    digitalWrite(AIN1_GEAR, direc1);
+    digitalWrite(AIN2_GEAR, direc2);
+    digitalWrite(PWMA_GEAR, speed);
   }
   else{
-    digitalWrite(BIN1, direc1);
-    digitalWrite(BIN2, direc2);
-    digitalWrite(PWMB, speed);
+    digitalWrite(BIN1_GEAR, direc1);
+    digitalWrite(BIN2_GEAR, direc2);
+    digitalWrite(PWMB_GEAR, speed);
   }
 }
 
@@ -91,13 +91,13 @@ void motorStop(void){
  * on standby
  */
  
-  digitalWrite(STBY, LOW);
-  digitalWrite(AIN1, LOW);
-  digitalWrite(AIN2, LOW);
-  digitalWrite(BIN1, LOW);
-  digitalWrite(BIN2, LOW);
-  digitalWrite(PWMA, STOP);
-  digitalWrite(PWMB, STOP);
+  digitalWrite(STBY_GEAR, LOW);
+  digitalWrite(AIN1_GEAR, LOW);
+  digitalWrite(AIN2_GEAR, LOW);
+  digitalWrite(BIN1_GEAR, LOW);
+  digitalWrite(BIN2_GEAR, LOW);
+  digitalWrite(PWMA_GEAR, STOP);
+  digitalWrite(PWMB_GEAR, STOP);
 }
 
 void motorMaxSpeed(int orientation){
@@ -105,7 +105,7 @@ void motorMaxSpeed(int orientation){
  * orientation : 0 forward, 1 backward
  */
 
- digitalWrite(STBY, HIGH); // Ensure not to be on standby
+ digitalWrite(STBY_GEAR, HIGH); // Ensure not to be on standby
 
   boolean direc1 = LOW;
   boolean direc2 = HIGH;
@@ -115,11 +115,11 @@ void motorMaxSpeed(int orientation){
     direc2 = LOW;
   }
 
-  digitalWrite(AIN1, direc1);
-  digitalWrite(AIN2, direc2);
-  digitalWrite(BIN1, direc2);
-  digitalWrite(BIN2, direc1);
-  digitalWrite(PWMA, MAX_SPEED);    // Max speed is 255
-  digitalWrite(PWMB, MAX_SPEED);
+  digitalWrite(AIN1_GEAR, direc1);
+  digitalWrite(AIN2_GEAR, direc2);
+  digitalWrite(BIN1_GEAR, direc2);
+  digitalWrite(BIN2_GEAR, direc1);
+  digitalWrite(PWMA_GEAR, MAX_SPEED);    // Max speed is 255
+  digitalWrite(PWMB_GEAR, MAX_SPEED);
 }
 
