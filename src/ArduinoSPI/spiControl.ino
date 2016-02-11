@@ -134,7 +134,7 @@ void commandDecoder(void){
     case 'g': marker = 0;           // Green puck
               //servoPrepare(M_GREEN);
               break;
-    case 'c': marker = 0;           // Catch the puck
+    case 'k': marker = 0;           // Catch the puck
               //catchPuck();
               break;
     case 'f': marker = 0;           // Release all pucks
