@@ -5,18 +5,14 @@
 
 using namespace std;
 
-int main() {
-    cout << "Hello, World!" << endl;
-    return 0;
-}
-
-
 
 int main(int argc, char **argv)
 {
     // If you call this, it will not actually access the GPIO
 // Use for testing
 //        bcm2835_set_debug(1);
+
+    cout << "Test SPI Raspberry" << endl;
 
     if (!bcm2835_init())
         return 1;
