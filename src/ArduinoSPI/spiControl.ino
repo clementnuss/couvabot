@@ -84,7 +84,7 @@ unsigned char receiveBuffer[4];
 unsigned char dat;
 byte marker = 0;
 
-int param1, param2, param3;
+char param1, param2, param3;
 unsigned char state[2];
 
 // MOTORS
@@ -92,7 +92,7 @@ Motor motorA(AIN1_GEAR, AIN2_GEAR, PWMA_GEAR);
 Motor motorB(BIN1_GEAR, BIN2_GEAR, PWMB_GEAR);
 volatile unsigned long rotTimeBegin = 0;
 volatile unsigned long rotTimeEnd   = 0;
-short rotationEnable = 0;
+bool rotationEnable = 0;
 
 // Function declaration ----------------------------------
 int angleConvert(int rotAngle, int rotSpeed);
@@ -153,31 +153,31 @@ void motorDecoder(void){
   param3 = receiveBuffer[3];
 
   switch(param1){
-    case MOTOR_A: digitalWrite(STBY_GEAR, HIGH);
+    case 'l': digitalWrite(STBY_GEAR, HIGH);  // l for left
                   motorA.drive(param2, param3);
                   break;
-    case MOTOR_B: digitalWrite(STBY_GEAR, HIGH);
+    case 'r': digitalWrite(STBY_GEAR, HIGH);  // r for right
                   motorB.drive(param2, param3);
                   break;
-    case BOTH: digitalWrite(STBY_GEAR, HIGH);
+    case 'b': digitalWrite(STBY_GEAR, HIGH);  //both
                motorA.drive(param2, param3);
                motorB.drive(param2, !param3);
                break;
-    case ROT_L: digitalWrite(STBY_GEAR, HIGH);
+    case 'L': digitalWrite(STBY_GEAR, HIGH);  //rotation left (uppercase L)
                 motorA.drive(param2, BACKWARD);
                 motorB.drive(param2, FORWARD);
                 rotTimeBegin = millis();
                 rotationEnable = 1;
                 rotTimeEnd = angleConvert(param3, param2);
                 break;
-    case ROT_R: digitalWrite(STBY_GEAR, HIGH);
+    case 'R': digitalWrite(STBY_GEAR, HIGH);  //rotation right (uppercase R)
                 motorA.drive(param2, FORWARD);
                 motorB.drive(param2, BACKWARD);
                 rotTimeBegin = millis();
                 rotationEnable = 1;
                 rotTimeEnd = angleConvert(param3, param2);
                 break;
-    case STOP: digitalWrite(STBY_GEAR, LOW);
+    case 's': digitalWrite(STBY_GEAR, LOW); // s for stop
                motorA.mStop();
                motorB.mStop();
                break;

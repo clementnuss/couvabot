@@ -14,9 +14,7 @@ set(SOURCE_FILES
     src/RPi/bcm2835-1.49/examples/spin/spin.c
     src/RPi/bcm2835-1.49/src/bcm2835.c
     src/RPi/bcm2835-1.49/src/bcm2835.h
-    src/RPi/bcm2835-1.49/src/test.c
-    src/SPI/helloArduino.c
-    src/SPI/spi.c)
+    src/RPi/bcm2835-1.49/src/test.c)
 
 include_directories(src/RPi/bcm2835-1.49/src/)
 link_directories(src/RPi/bcm2835-1.49/src)
