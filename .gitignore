@@ -1,4 +1,5 @@
 # File that ignores folders/files
 
+*~
 .idea/
 build/
