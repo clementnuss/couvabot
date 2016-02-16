@@ -1,4 +1,4 @@
-# File that ignores folders/files
+# File that tells git to ignore folders/files
 
 *~
 .idea/
