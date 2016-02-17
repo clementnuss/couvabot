@@ -13,7 +13,7 @@
 #define ROT_L           4
 #define ROT_R           5
 
-// SREVO MANEUVRES
+// SERVO MANEUVERS
 #define B_CLOSE         0
 #define B_OPEN          180
 #define B_LAPSE         5
@@ -331,7 +331,7 @@ void catchIRCheck(int side){
     }
 }
 
-void catchMoveG(void){                  // Servo maneuvre to catch the puck
+void catchMoveG(void){                  // Servo maneuver to catch the puck
     if(frontServoL.anglePos > L_SAFE){
         frontServoL.anglePos -= 1;
         frontServoL.updatePos();
