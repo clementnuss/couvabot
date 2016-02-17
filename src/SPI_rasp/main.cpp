@@ -5,57 +5,72 @@
 
 using namespace std;
 
+bool bcm2835Initialized = false;
 
-int main(int argc, char **argv)
-{
-    // If you call this, it will not actually access the GPIO
-// Use for testing
-//        bcm2835_set_debug(1);
+class SPI {
 
     uint8_t send_data;
     uint8_t read_data;
+    uint8_t chipSelect;
+    bcm2835PWMClockDivider clock;
 
-    cout << "Test SPI Raspberry" << endl;
+public:
+    SPI(bcm2835PWMClockDivider clock, bcm2835SPIChipSelect chipSelect) {
 
-    if (!bcm2835_init())
-        return 1;
+        cout << "Initialising SPI object" << endl;
+        this->clock = clock;
+        this->chipSelect = chipSelect;
 
-    bcm2835_spi_begin();
-    bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);      // The default
-    bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);                   // The default
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_65536); // The default
-    bcm2835_spi_chipSelect(BCM2835_SPI_CS0);                      // The default
-    bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);      // the default
+        if (!bcm2835Initialized)
+            bcm2835_spi_begin();
 
-    // Send a byte to the slave and simultaneously read a byte back from the slave
-    // If you tie MISO to MOSI, you should read back what was sent
-    send_data = 'c';
-    read_data = bcm2835_spi_transfer(send_data);
-    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data, read_data, read_data);
+        bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
+        bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);
+        bcm2835_spi_setClockDivider(clock);
+        bcm2835_spi_chipSelect(chipSelect);
+        bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
+    }
 
-    send_data = 'm';
-    read_data = bcm2835_spi_transfer(send_data);
-    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data, read_data, read_data);
-
-    send_data = 0x04;
-    read_data = bcm2835_spi_transfer(send_data);
-    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data, read_data, read_data);
-
-    send_data = 0xff;
-    read_data = bcm2835_spi_transfer(send_data);
-    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data, read_data, read_data);
-
-    send_data = 120;
-    read_data = bcm2835_spi_transfer(send_data);
-    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data, read_data, read_data);
-
-    send_data = 'c';
-    read_data = bcm2835_spi_transfer(send_data);
-    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data, read_data, read_data);
+    uint8_t spi_transfer(uint8_t send_data) {
+        //TODO : check performance issue of continuously changing chipSelect & Clock
+        bcm2835_spi_setClockDivider(clock);
+        bcm2835_spi_chipSelect(chipSelect);
+        bcm2835_spi_transfer(send_data);
+    }
 
 
-//if (send_data != read_data)
-    //    printf("Do you have the loopback from MOSI to MISO connected?\n");
+};
+
+
+int main(int argc, char **argv) {
+
+    SPI arduinoSPI(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CS0);
+
+    read_data = arduinoSPI.spi_transfer('c');
+    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data,
+           read_data, read_data);
+
+    read_data = arduinoSPI.spi_transfer('m');
+    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data,
+           read_data, read_data);
+
+    read_data = arduinoSPI.spi_transfer('b');
+    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data,
+           read_data, read_data);
+
+    read_data = arduinoSPI.spi_transfer(255);
+    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data,
+           read_data, read_data);
+
+    read_data = arduinoSPI.spi_transfer(f);
+    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data,
+           read_data, read_data);
+
+    read_data = arduinoSPI.spi_transfer('c');
+    printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n", send_data, send_data,
+           read_data, read_data);
+
+
     bcm2835_spi_end();
     bcm2835_close();
     return 0;
