@@ -7,9 +7,9 @@ cmake_minimum_required(VERSION 2.8)
 #====================================================================#
 #  Setup Project                                                     #
 #====================================================================#
-project(ArduinoSPI)
+project(servoSpiControl)
 
-set(${CMAKE_PROJECT_NAME}_SKETCH  spiControl)
+set(${CMAKE_PROJECT_NAME}_SKETCH  servoSpiControl.ino)
 set(${CMAKE_PROJECT_NAME}_BOARD mega)
 
 set(mega.build.mcu atmega2560)
