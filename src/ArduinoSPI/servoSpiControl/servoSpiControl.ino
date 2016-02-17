@@ -211,6 +211,7 @@ void freePucks      (void);
 void motorRotation  (void);
 void catchMoveR     (void);
 void catchMoveL     (void);
+void catchPuck      (void);
 
 // SETUP -------------------------------------------------
 void setup() {
