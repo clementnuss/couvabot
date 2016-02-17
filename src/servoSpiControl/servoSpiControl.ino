@@ -1,6 +1,9 @@
 #include <avr/io.h>
 #include <Arduino.h>
-#include <servoSpiControl.h>
+#include <Servo.h>
+
+#include "servoSpiControl.h"
+
 
 // DRIVING GEARS
 #define FORWARD         0
@@ -80,8 +83,9 @@
 // Buttons and IRs
 #define CATCH_BUTTON    1  // Button digital pin
 #define IR_ENABLE       1  // IR digital pin
-#define IR_CATCH_G      A1 // IR analog pin
-#define IR_CATCH_R      A1
+
+//#define IR_CATCH_G      A1 // IR analog pin
+//#define IR_CATCH_R      A1
 
 //-------------------------------------------------------
 
@@ -319,8 +323,6 @@ void catchIRCheck(int side) {
         }
     }
 }
-
-void catchMoveG(void);
 
 void catchMoveG(void) {                  // Servo maneuver to catch the puck
     if(frontServoL.anglePos > L_SAFE){
