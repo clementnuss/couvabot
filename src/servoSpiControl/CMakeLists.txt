@@ -9,8 +9,11 @@ cmake_minimum_required(VERSION 2.8)
 #====================================================================#
 project(servoSpiControl)
 
-set(${CMAKE_PROJECT_NAME}_SKETCH  servoSpiControl.ino)
+link_directories(${ARDUINO_SDK_PATH}/libraries)
+
+set(${CMAKE_PROJECT_NAME}_SRCS  servoSpiControl/servoSpiControl.cpp)
 set(${CMAKE_PROJECT_NAME}_BOARD mega)
+set(${CMAKE_PROJECT_NAME}_LIBS Servo)
 
 set(mega.build.mcu atmega2560)
 set(mega.upload.speed 115200)

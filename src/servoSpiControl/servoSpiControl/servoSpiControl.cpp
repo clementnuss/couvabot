@@ -1,4 +1,6 @@
-#include <Servo.h>
+#include <avr/io.h>
+#include <Arduino.h>
+#include <servoSpiControl.h>
 
 // DRIVING GEARS
 #define FORWARD         0
@@ -199,19 +201,6 @@ volatile int           F_STATE           = 0;
 volatile unsigned long bServoTimeBegin   = 0;
 volatile unsigned long fServoTimeBegin   = 0;
 
-
-// FUNCTION DECLARATION ----------------------------------
-int angleConvert    (int rotAngle, int rotSpeed);
-void servoPrepare   (int angle);
-void catchIRCeck    (int side);
-void commandDecoder (void);
-void motorDecoder   (void);
-void spiHandler     (void);
-void freePucks      (void);
-void motorRotation  (void);
-void catchMoveR     (void);
-void catchMoveL     (void);
-
 // SETUP -------------------------------------------------
 void setup() {
     pinMode(MISO, OUTPUT);               // Enable SPI
@@ -253,57 +242,57 @@ void loop() {
     }
 }
 
-// FUNCTIONS ---------------------------------------------
-void catchPuck(void){
+
+void catchPuck(void) {
     switch(F_STATE){
         case(F_CATCH_G): if((millis() - fServoTimeBegin) >= F_LAPSE){  // Catch a puck
-                             catchMoveG();
-                         }
-                         if((frontServoL.anglePos == L_PUSH)  &&
-                            (frontServoR.anglePos == R_CLOSE) &&
-                            (frontServoM.anglePos == M_MID)){
-                             F_STATE = F_IR_G;
-                             digitalWrite(IR_ENABLE, HIGH);
-                             fServoTimeBegin = 0;
-                         }
-                         break;
+                catchMoveG();
+            }
+            if((frontServoL.anglePos == L_PUSH)  &&
+               (frontServoR.anglePos == R_CLOSE) &&
+               (frontServoM.anglePos == M_MID)){
+                F_STATE = F_IR_G;
+                digitalWrite(IR_ENABLE, HIGH);
+                fServoTimeBegin = 0;
+            }
+            break;
         case(F_CATCH_R): if((millis() - fServoTimeBegin) >= F_LAPSE){
-                             catchMoveR();
-                         }
-                         if((frontServoL.anglePos == L_CLOSE) &&
-                            (frontServoR.anglePos == R_PUSH)  &&
-                            (frontServoM.anglePos == M_MID)){
-                             digitalWrite(IR_ENABLE, HIGH);
-                             F_STATE         = F_IR_R;
-                             fServoTimeBegin = millis();
-                         }
-                         break;
+                catchMoveR();
+            }
+            if((frontServoL.anglePos == L_CLOSE) &&
+               (frontServoR.anglePos == R_PUSH)  &&
+               (frontServoM.anglePos == M_MID)){
+                digitalWrite(IR_ENABLE, HIGH);
+                F_STATE         = F_IR_R;
+                fServoTimeBegin = millis();
+            }
+            break;
         case(F_IR_G):    catchIRCheck(IR_CATCH_G);                     // Wait until IR detects
         case(F_IR_R):    catchIRCheck(IR_CATCH_R);                     // puck
         case(F_BELT):    motorBelt.drive(MAX_SPEED, FORWARD);          // Pull the puck up
-                         fServoTimeBegin = millis();
-                         F_STATE         = F_PULL;
-                         break;
+            fServoTimeBegin = millis();
+            F_STATE         = F_PULL;
+            break;
         case(F_PULL):    if((millis() - fServoTimeBegin) >= F_PULL_LAPSE){
-                             frontServoL.reset();
-                             frontServoR.reset();
-                             frontServoM.reset();
-                             F_STATE = F_LIFT;
-                             // READY TO MOVE //////////////////////////////////////
-                         }
-                         break;
+                frontServoL.reset();
+                frontServoR.reset();
+                frontServoM.reset();
+                F_STATE = F_LIFT;
+                // READY TO MOVE //////////////////////////////////////
+            }
+            break;
         case(F_LIFT):    if(!digitalRead(CATCH_BUTTON)){               // Puck is captured
-                             motorBelt.mStop();
-                             F_STATE    = 0;
-                             servoCatch = 0;
-                             // JOB FINISHED ///////////////////////////////////////
-                         }else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
-                             // ERROR //////////////////////////////////////////////
-                         }
+                motorBelt.mStop();
+                F_STATE    = 0;
+                servoCatch = 0;
+                // JOB FINISHED ///////////////////////////////////////
+            }else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
+                // ERROR //////////////////////////////////////////////
+            }
     }
 }
 
-void catchIRCheck(int side){
+void catchIRCheck(int side) {
     if(side == IR_CATCH_G){
         if(analogRead(IR_CATCH_G) < IR_DIST){    // Puck in front of IR
             digitalWrite(IR_ENABLE, LOW);
@@ -331,7 +320,9 @@ void catchIRCheck(int side){
     }
 }
 
-void catchMoveG(void){                  // Servo maneuver to catch the puck
+void catchMoveG(void);
+
+void catchMoveG(void) {                  // Servo maneuver to catch the puck
     if(frontServoL.anglePos > L_SAFE){
         frontServoL.anglePos -= 1;
         frontServoL.updatePos();
