@@ -10,6 +10,7 @@ cmake_minimum_required(VERSION 2.8)
 project(ArduinoSPI)
 
 set(${CMAKE_PROJECT_NAME}_SKETCH  spiControl)
+
 set(${CMAKE_PROJECT_NAME}_BOARD mega)
 set(mega.build.mcu atmega2560)
 set(mega.upload.speed 115200)
