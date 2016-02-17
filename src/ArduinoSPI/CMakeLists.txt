@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 2.8)
 #====================================================================#
 project(ArduinoSPI)
 
-set(${CMAKE_PROJECT_NAME}_SKETCH  spiControl.ino)
+set(${CMAKE_PROJECT_NAME}_SKETCH  spiControl)
 set(${CMAKE_PROJECT_NAME}_BOARD mega)
 
 IF("${COMPILER_SYSTEM}" MATCHES "Linux")
