@@ -3,89 +3,7 @@
 #include <Servo.h>
 
 #include "servoSpiControl.h"
-
-// DRIVING GEARS
-#define FORWARD         0
-#define BACKWARD        1
-#define BOTH            2
-#define MOTOR_A         0
-#define MOTOR_B         1
-#define STOP            3
-#define MAX_SPEED       255
-#define CW              0
-#define CCW             1
-#define ROT_L           4
-#define ROT_R           5
-
-// SERVO MANEUVERS
-#define B_CLOSE         0
-#define B_OPEN          180
-#define B_LAPSE         5
-#define B_ROLL_LAPSE    1000
-#define B_ROLL_SPEED    150
-#define B_RELEASE       3
-#define B_ROLL          4
-#define B_ROLLING       5
-#define B_RECLOSE       6
-#define F_LAPSE         5
-#define F_CATCH_G       3
-#define F_CATCH_R       4
-#define F_IR_G          5
-#define F_IR_R          6
-#define F_BELT          7
-#define F_PULL          8
-#define F_PULL_LAPSE    750
-#define F_LIFT          9
-#define F_LIFT_LAPSE    8000
-#define M_MID           90
-#define M_RED           60
-#define M_GREEN         120
-#define L_OPEN          180
-#define L_CLOSE         90
-#define L_PUSH          80
-#define L_SAFE          150
-#define R_OPEN          1
-#define R_CLOSE         90
-#define R_PUSH          100
-#define R_SAFE          30
-
-// SENSORS IO
-#define IR_CATCH_G      0
-#define IR_CATCH_R      1
-#define IR_DIST         1024 // ***********************************33
-#define IR_CATCH_LAPSE  1000
-
-//-------------------PINS TO CHANGE----------------------
-#define STBY_GEAR       25 //standby, can be digital pin
-
-// Motor A
-#define PWMA_GEAR       10 //Speed control, PWM pin
-#define AIN1_GEAR       26 //Direction, can be digital pin
-#define AIN2_GEAR       27 //Direction
-
-// Motor B
-#define PWMB_GEAR       9 
-#define BIN1_GEAR       28 
-#define BIN2_GEAR       29 
-
-// Conveyor belt motor
-#define PWM_BELT        12
-#define AIN1_BELT       22
-#define AIN2_BELT       23
-
-// Servos
-#define SERVO_FRONT_L   6  // Servo PWM pins
-#define SERVO_FRONT_M   5
-#define SERVO_FRONT_R   4
-#define SERVO_BACK      7
-
-// Buttons and IRs
-#define CATCH_BUTTON    24 // Button digital pin
-#define IR_ENABLE       30 // IR digital pin
-#define IR_CATCH_G      A1 // IR analog pin
-#define IR_CATCH_R      A2
-
-//-------------------------------------------------------
+#include "SpiConstants.h"
 
 class Motor
 {
@@ -95,9 +13,9 @@ class Motor
         int motorPin2;
         int motorPWMPin;                     // Speed pin
 
-        volatile int     velocity = 0;
-        volatile boolean orient1  = LOW;
-        volatile boolean orient2  = LOW;
+        volatile int     velocity;
+        volatile boolean orient1;
+        volatile boolean orient2;
 
     public:
         Motor(int pin1, int pin2, int pwm){
@@ -197,24 +115,11 @@ ServoM frontServoR (R_OPEN);
 ServoM frontServoM (M_MID);
 ServoM backServo   (B_CLOSE);
 bool                   servoReleasePucks = 0;
-bool                   servoCatch        = 1; //****************************
+bool                   servoCatch        = 0;
 volatile int           B_STATE           = 0;
-volatile int           F_STATE           = F_CATCH_G; //****************33**
+volatile int           F_STATE           = 0;
 volatile unsigned long bServoTimeBegin   = 0;
 volatile unsigned long fServoTimeBegin   = 0;
-
-
-// FUNCTION DECLARATION ----------------------------------
-int angleConvert    (int rotAngle, int rotSpeed);
-void servoPrepare   (int angle);
-void catchIRCeck    (int side);
-void commandDecoder (void);
-void motorDecoder   (void);
-void spiHandler     (void);
-void freePucks      (void);
-void motorRotation  (void);
-void catchMoveR     (void);
-void catchMoveL     (void);
 
 // SETUP -------------------------------------------------
 void setup() {
@@ -236,9 +141,6 @@ void setup() {
     frontServoM.reset ();
     backServo.reset   ();
 
-    motorBelt.drive(MAX_SPEED, FORWARD);
-
-    Serial.begin(9600);
 }
 
 // LOOP --------------------------------------------------
@@ -264,60 +166,53 @@ void loop() {
 void catchPuck(void){
     switch(F_STATE){
         case(F_CATCH_G): if((millis() - fServoTimeBegin) >= F_LAPSE){  // Catch a puck
-                             catchMoveG();
-                         }
-                         if((frontServoL.anglePos == L_PUSH)  &&
-                            (frontServoR.anglePos == R_CLOSE) &&
-                            (frontServoM.anglePos == M_MID)){
-                             F_STATE = F_IR_G;
-                             digitalWrite(IR_ENABLE, HIGH);
-                             fServoTimeBegin = millis();
-
-                             Serial.println(1);
-                         }
-                         break;
+                catchMoveG();
+            }
+            if((frontServoL.anglePos == L_PUSH)  &&
+               (frontServoR.anglePos == R_CLOSE) &&
+               (frontServoM.anglePos == M_MID)){
+                F_STATE = F_IR_G;
+                digitalWrite(IR_ENABLE, HIGH);
+                fServoTimeBegin = 0;
+            }
+            break;
         case(F_CATCH_R): if((millis() - fServoTimeBegin) >= F_LAPSE){
-                             catchMoveR();
-                         }
-                         if((frontServoL.anglePos == L_CLOSE) &&
-                            (frontServoR.anglePos == R_PUSH)  &&
-                            (frontServoM.anglePos == M_MID)){
-                             digitalWrite(IR_ENABLE, HIGH);
-                             F_STATE         = F_IR_R;
-                             fServoTimeBegin = millis();
-                         }
-                         break;
-        case(F_IR_G):    Serial.println(4);
-                         catchIRCheck(IR_CATCH_G);                     // Wait until IR detects
+                catchMoveR();
+            }
+            if((frontServoL.anglePos == L_CLOSE) &&
+               (frontServoR.anglePos == R_PUSH)  &&
+               (frontServoM.anglePos == M_MID)){
+                digitalWrite(IR_ENABLE, HIGH);
+                F_STATE         = F_IR_R;
+                fServoTimeBegin = millis();
+            }
+            break;
+        case(F_IR_G):    catchIRCheck(IR_CATCH_G);                     // Wait until IR detects
         case(F_IR_R):    catchIRCheck(IR_CATCH_R);                     // puck
-        case(F_BELT):    Serial.println(6);
-                         motorBelt.drive(MAX_SPEED, FORWARD);          // Pull the puck up
-                         Serial.println(7);
-                         fServoTimeBegin = millis();
-                         F_STATE         = F_PULL;
-                         break;
+        case(F_BELT):    motorBelt.drive(MAX_SPEED, FORWARD);          // Pull the puck up
+            fServoTimeBegin = millis();
+            F_STATE         = F_PULL;
+            break;
         case(F_PULL):    if((millis() - fServoTimeBegin) >= F_PULL_LAPSE){
-                             frontServoL.reset();
-                             frontServoR.reset();
-                             frontServoM.reset();
-                             F_STATE = F_LIFT;
-                             Serial.println(8);
-                             // READY TO MOVE //////////////////////////////////////
-                         }
-                         break;
+                frontServoL.reset();
+                frontServoR.reset();
+                frontServoM.reset();
+                F_STATE = F_LIFT;
+                // READY TO MOVE //////////////////////////////////////
+            }
+            break;
         case(F_LIFT):    if(!digitalRead(CATCH_BUTTON)){               // Puck is captured
-                             motorBelt.mStop();
-                             F_STATE    = 0;
-                             servoCatch = 0;
-                             Serial.println(9);
-                             // JOB FINISHED ///////////////////////////////////////
-                         }else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
-                             // ERROR //////////////////////////////////////////////
-                         }
+                motorBelt.mStop();
+                F_STATE    = 0;
+                servoCatch = 0;
+                // JOB FINISHED ///////////////////////////////////////
+            }else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
+                // ERROR //////////////////////////////////////////////
+            }
     }
 }
 
-void catchIRCheck(int side){
+void catchIRCheck(int side) {
     if(side == IR_CATCH_G){
       Serial.println(5);
         if(analogRead(IR_CATCH_G) < IR_DIST){    // Puck in front of IR
