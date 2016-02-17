@@ -1172,9 +1172,9 @@ function(setup_arduino_bootloader_upload TARGET_NAME BOARD_ID PORT AVRDUDE_FLAGS
     endif()
     set(TARGET_PATH ${EXECUTABLE_OUTPUT_PATH}/${TARGET_NAME})
 
-    list(APPEND AVRDUDE_ARGS "-Uflash:w:${TARGET_PATH}.hex")
+    list(APPEND AVRDUDE_ARGS "-Uflash:w:${TARGET_PATH}.hex:i")
     list(APPEND AVRDUDE_ARGS "-Ueeprom:w:${TARGET_PATH}.eep:i")
-    add_custom_target(${UPLOAD_TARGET}
+       add_custom_target(${UPLOAD_TARGET}
                      ${ARDUINO_AVRDUDE_PROGRAM}
                      ${AVRDUDE_ARGS}
                      DEPENDS ${TARGET_NAME})
@@ -1220,7 +1220,7 @@ function(setup_arduino_programmer_burn TARGET_NAME BOARD_ID PROGRAMMER PORT AVRD
     endif()
     set(TARGET_PATH ${EXECUTABLE_OUTPUT_PATH}/${TARGET_NAME})
 
-    list(APPEND AVRDUDE_ARGS "-Uflash:w:${TARGET_PATH}.hex")
+    list(APPEND AVRDUDE_ARGS "-Uflash:w:${TARGET_PATH}.hex:i")
 
     add_custom_target(${PROGRAMMER_TARGET}
                      ${ARDUINO_AVRDUDE_PROGRAM}
@@ -1283,6 +1283,7 @@ function(setup_arduino_bootloader_burn TARGET_NAME BOARD_ID PROGRAMMER PORT AVRD
 
     # Set bootloader image
     list(APPEND AVRDUDE_ARGS "-Uflash:w:${${BOARD_ID}.bootloader.file}:i")
+
 
     # Set lockbits
     list(APPEND AVRDUDE_ARGS "-Ulock:w:${${BOARD_ID}.bootloader.lock_bits}:m")
@@ -1863,7 +1864,7 @@ function(SETUP_ARDUINO_SIZE_SCRIPT OUTPUT_VAR)
     set(ARDUINO_SIZE_SCRIPT_PATH ${CMAKE_BINARY_DIR}/CMakeFiles/FirmwareSize.cmake)
 
     file(WRITE ${ARDUINO_SIZE_SCRIPT_PATH} "
-        set(AVRSIZE_PROGRAM ${AVRSIZE_PROGRAM})
+        set(AVRSIZE_PROGRAM \"${AVRSIZE_PROGRAM}\")
         set(AVRSIZE_FLAGS -C --mcu=\${MCU})
 
         execute_process(COMMAND \${AVRSIZE_PROGRAM} \${AVRSIZE_FLAGS} \${FIRMWARE_IMAGE} \${EEPROM_IMAGE}
