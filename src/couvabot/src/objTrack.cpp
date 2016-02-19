@@ -4,12 +4,10 @@
 
 //Inspired by  Kyle Hounslow 2013
 
-//#include <sstream>
-
 #include <string>
 #include <iostream>
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include "objTrack.h"
 #include "Blob.h"
@@ -36,7 +34,7 @@ const int MAX_OBJECT_AREA = FRAME_HEIGHT * FRAME_WIDTH / 1.5;
 const string windowName = "Original Image";
 const string windowName1 = "HSV Image";
 const string windowName2 = "Thresholded Image";
-const string windowName3 = "After Morphological Operations";
+const string windowName3 = "After7 Morphological Operations";
 const string trackbarWindowName = "Trackbars";
 
 void on_trackbar(int, void *) {//This function gets called whenever a
@@ -143,7 +141,7 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed) {
     double refArea = 0;
     bool objectFound = false;
     if (hierarchy.size() > 0) {
-        uint numObjects = (uint) hierarchy.size();
+        uint8_t numObjects = (uint8_t) hierarchy.size();
 
         vector<Blob> blobs;
         blobs.reserve(numObjects);

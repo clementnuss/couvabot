@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.2)
 project(couvabot)
-find_package(OpenCV REQUIRED)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories(~/raspicam/cppapi/build/install/include/raspicam)
+if(UNIX)
+    include_directories(~/raspicam/cppapi/build/install/include/raspicam)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+
+elseif(WIN32)
+    set(OpenCV_DIR "C:\\OpenCV\\opencv-2.4.11")
+endif()
+
+find_package(OpenCV REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
