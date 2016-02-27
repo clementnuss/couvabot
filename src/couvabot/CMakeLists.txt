@@ -14,10 +14,8 @@ find_package(OpenCV REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES main.cpp src/camera.cpp src/detectObjects.cpp src/Blob.cpp)
 add_executable(main ${SOURCE_FILES})
-add_executable(objTrack src/objTrack.cpp src/objTrack.h src/Blob.cpp src/Blob.h)
 
-target_link_libraries(objTrack ${OpenCV_LIBS})
 target_link_libraries(main ${OpenCV_LIBS})
 

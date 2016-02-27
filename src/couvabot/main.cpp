@@ -1,85 +1,86 @@
 //
-// Created by clement on 10.02.16.
+// Created by Clément Nussbaumer on 10.02.16.
+//
+// Inspired by Kyle Hounslow
 //
 
+#include "main.h"
+#include "src/detectObjects.h"
 
-#include <iostream>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+int CAMERA_ANGLE = 0;
+int hMax, hMin, sMin, sMax, vMin, vMax;
 
-using namespace cv;
-using namespace std;
+void createTrackbars() {
+    namedWindow("Trackbars", 0);
 
-int main( int argc, char** argv )
-{
-    VideoCapture cap(0); //capture the video from web cam
+    hMin = sMin = vMin = 0;
+    hMax = 180;
+    sMax = vMax = 255;
 
-    if ( !cap.isOpened() )  // if not success, exit program
-    {
-        cout << "Cannot open the web cam" << endl;
-        return -1;
+    createTrackbar("min_H", "Trackbars", &hMin, hMax, nullptr);
+    createTrackbar("max_H", "Trackbars", &hMax, hMax, nullptr);
+    createTrackbar("min_S", "Trackbars", &sMin, sMax, nullptr);
+    createTrackbar("max_S", "Trackbars", &sMax, sMax, nullptr);
+    createTrackbar("min_V", "Trackbars", &vMin, vMax, nullptr);
+    createTrackbar("max_V", "Trackbars", &vMax, vMax, nullptr);
+}
+
+int main(int argc, char **argv) {
+
+    GenericCam *cam;
+
+    if (RPI) {
+        cam = new RPiCam();
     }
+    else {
+        cam = new WebCam();
+    }
+    Mat img, hsv, filtered;
 
-    namedWindow("Control", CV_WINDOW_AUTOSIZE); //create a window called "Control"
+    createTrackbars();
 
-    int iLowH = 0;
-    int iHighH = 179;
+    vector<Blob> redBlobs, greenBlobs;
+    int frameCnt = 0;
 
-    int iLowS = 0;
-    int iHighS = 255;
+    while (1) {
 
-    int iLowV = 0;
-    int iHighV = 255;
+        cam->read(img);
 
-    //Create trackbars in "Control" window
-    cvCreateTrackbar("LowH", "Control", &iLowH, 179); //Hue (0 - 179)
-    cvCreateTrackbar("HighH", "Control", &iHighH, 179);
+        cvtColor(img, hsv, COLOR_BGR2HSV);
 
-    cvCreateTrackbar("LowS", "Control", &iLowS, 255); //Saturation (0 - 255)
-    cvCreateTrackbar("HighS", "Control", &iHighS, 255);
+        inRange(hsv, Scalar(hMin, sMin, vMin), Scalar(hMax, sMax, vMax), filtered);
 
-    cvCreateTrackbar("LowV", "Control", &iLowV, 255); //Value (0 - 255)
-    cvCreateTrackbar("HighV", "Control", &iHighV, 255);
+        Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
+        Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(6, 6));
 
-    while (true)
-    {
-        Mat imgOriginal;
+        erode(filtered, filtered, erodeElement);
+        erode(filtered, filtered, erodeElement);
 
-        bool bSuccess = cap.read(imgOriginal); // read a new frame from video
+        dilate(filtered, filtered, dilateElement);
+        dilate(filtered, filtered, dilateElement);
 
-        if (!bSuccess) //if not success, break loop
-        {
-            cout << "Cannot read a frame from video stream" << endl;
-            break;
+        cout << "Frame # " << frameCnt++ << "\n";
+
+        if (detectObjects(redBlobs, filtered, RED)) {
+            for (int i = 0; i < redBlobs.size(); i++) {
+                cout << "Blob x :  " << redBlobs[i].getPosX()
+                << " y : " << redBlobs[i].getPosY() <<
+                " ; aire : " << redBlobs[i].getArea() << "\t";
+            }
         }
 
-        Mat imgHSV;
 
-        cvtColor(imgOriginal, imgHSV, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
 
-        Mat imgThresholded;
+        //show frames
+        imshow("filtered", filtered);
+        imshow("camera", img);
+        imshow("HSV image", hsv);
 
-        inRange(imgHSV, Scalar(iLowH, iLowS, iLowV), Scalar(iHighH, iHighS, iHighV), imgThresholded); //Threshold the image
 
-        //morphological opening (remove small objects from the foreground)
-        erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-        dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-
-        //morphological closing (fill small holes in the foreground)
-        dilate( imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-        erode(imgThresholded, imgThresholded, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-
-        imshow("Thresholded Image", imgThresholded); //show the thresholded image
-        imshow("Original", imgOriginal); //show the original image
-
-        if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
-        {
-            cout << "esc key is pressed by user" << endl;
+        if (waitKey(500) == 27)
             break;
-        }
+
     }
 
     return 0;
-
 }

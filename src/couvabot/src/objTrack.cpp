@@ -6,14 +6,14 @@
 
 #include <string>
 #include <iostream>
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
-#include "objTrack.h"
 #include "Blob.h"
 
-using namespace std;
 using namespace cv;
+using namespace std;
+
 //initial min and max HSV filter values.
 //these will be changed using trackbars
 int H_MIN = 0;
@@ -22,29 +22,26 @@ int S_MIN = 0;
 int S_MAX = 256;
 int V_MIN = 0;
 int V_MAX = 256;
-//default capture width and height
+
 const int FRAME_WIDTH = 640;
 const int FRAME_HEIGHT = 480;
-//max number of objects to be detected in frame
-const int MAX_NUM_OBJECTS = 50;
-//minimum and maximum object area
-const int MIN_OBJECT_AREA = 22 * 22;
-const int MAX_OBJECT_AREA = FRAME_HEIGHT * FRAME_WIDTH / 1.5;
+const int MAX_NUM_OBJECTS = 30;
+
+//Minimum/maximum area
+const int MIN_AREA = 20 * 20;
+const int MAX_AREA = FRAME_WIDTH * FRAME_HEIGHT / 4;
+
+
 //names that will appear at the top of each window
 const string windowName = "Original Image";
 const string windowName1 = "HSV Image";
 const string windowName2 = "Thresholded Image";
-const string windowName3 = "After7 Morphological Operations";
 const string trackbarWindowName = "Trackbars";
 
 void on_trackbar(int, void *) {//This function gets called whenever a
     // trackbar position is changed
-
-
-
-
-
 }
+
 
 string intToString(int number) {
 
@@ -56,7 +53,6 @@ string intToString(int number) {
 
 void createTrackbars() {
     //create window for trackbars
-
 
     namedWindow(trackbarWindowName, 0);
     //create memory to store trackbar name on window
@@ -78,8 +74,6 @@ void createTrackbars() {
     createTrackbar("S_MAX", trackbarWindowName, &S_MAX, S_MAX, on_trackbar);
     createTrackbar("V_MIN", trackbarWindowName, &V_MIN, V_MAX, on_trackbar);
     createTrackbar("V_MAX", trackbarWindowName, &V_MAX, V_MAX, on_trackbar);
-
-
 }
 
 void drawObject(int x, int y, Mat &frame) {
@@ -124,8 +118,6 @@ void morphOps(Mat &thresh) {
 
     dilate(thresh, thresh, dilateElement);
     dilate(thresh, thresh, dilateElement);
-
-
 }
 
 void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed) {
@@ -159,12 +151,12 @@ void trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed) {
                 //if the area is the same as the 3/2 of the image size, probably just a bad filter
                 //we only want the object with the largest area so we safe a reference area each
                 //iteration and compare it to the area in the next iteration.
-                if (area > MIN_OBJECT_AREA && area < MAX_OBJECT_AREA) {
+                if (area > MIN_AREA && area < MAX_AREA) {
                     x = moment.m10 / area;
                     y = moment.m01 / area;
                     objectFound = true;
                     refArea = area;
-                    Blob tmp(x, y, area);
+                    Blob tmp(x, y, area, 0);
                     blobs.push_back(tmp);
                     cnt++;
 
