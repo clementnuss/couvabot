@@ -6,12 +6,14 @@
 #define COUVABOT_MAIN_H
 
 #define RPI false
+#define CALIB true
+
 
 #ifndef RPI
 //include Raspberry things (Raspicam library)
 #else
-    #define FRAME_WIDTH 640
-    #define FRAME_HEIGHT 480
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 240
 #endif
 
 
@@ -26,7 +28,13 @@
 using namespace cv;
 using namespace std;
 
-void createTrackbars();
+bool initCam();
+
 int main(int argc, char **argv);
+
+struct HSVbounds {
+    int hMin = 0, sMin = 0, vMin = 0,
+            hMax = 180, sMax = 255, vMax = 255;
+};
 
 #endif //COUVABOT_MAIN_H

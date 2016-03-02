@@ -13,5 +13,7 @@
  * the boolean returned indicates wether or not Blobs were found
  */
 bool detectObjects(vector<Blob> &blobs, Mat binaryImage, int colour);
+void createTrackbars(HSVbounds &bounds, string winName);
+void imgProc(HSVbounds hsvBounds, Mat &hsv, Mat &filtered);
 
 #endif //COUVABOT_OBJDETECT_H

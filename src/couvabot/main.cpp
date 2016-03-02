@@ -1,67 +1,58 @@
 //
 // Created by Clément Nussbaumer on 10.02.16.
 //
-// Inspired by Kyle Hounslow
+//
 //
 
 #include "main.h"
 #include "src/detectObjects.h"
 
-int CAMERA_ANGLE = 0;
-int hMax, hMin, sMin, sMax, vMin, vMax;
+int        CAMERA_ANGLE = 0;
+GenericCam *cam;
+HSVbounds  hsvBoundsGreen, hsvBoundsRed;
 
-void createTrackbars() {
-    namedWindow("Trackbars", 0);
-
-    hMin = sMin = vMin = 0;
-    hMax = 180;
-    sMax = vMax = 255;
-
-    createTrackbar("min_H", "Trackbars", &hMin, hMax, nullptr);
-    createTrackbar("max_H", "Trackbars", &hMax, hMax, nullptr);
-    createTrackbar("min_S", "Trackbars", &sMin, sMax, nullptr);
-    createTrackbar("max_S", "Trackbars", &sMax, sMax, nullptr);
-    createTrackbar("min_V", "Trackbars", &vMin, vMax, nullptr);
-    createTrackbar("max_V", "Trackbars", &vMax, vMax, nullptr);
+bool initCam() {
+    if (RPI)
+        cam = new RPiCam();
+    else
+        cam = new WebCam();
 }
+
 
 int main(int argc, char **argv) {
 
-    GenericCam *cam;
+    if (!initCam())
+        cerr << "Camera initialization error !!!";
 
-    if (RPI) {
-        cam = new RPiCam();
+    if (CALIB) {
+        createTrackbars(hsvBoundsGreen, "Green Trackbars");
+        createTrackbars(hsvBoundsRed, "Red Trackbars");
     }
-    else {
-        cam = new WebCam();
-    }
+
     Mat img, hsv, filtered;
 
-    createTrackbars();
-
     vector<Blob> redBlobs, greenBlobs;
-    int frameCnt = 0;
+    int          frameCnt = 0;
 
     while (1) {
 
         cam->read(img);
-
         cvtColor(img, hsv, COLOR_BGR2HSV);
 
-        inRange(hsv, Scalar(hMin, sMin, vMin), Scalar(hMax, sMax, vMax), filtered);
+        imgProc(hsvBoundsRed, hsv, filtered);
+        detectObjects(redBlobs, filtered, RED);
+        if (CALIB)
+            imshow("Red filtered", filtered);
 
-        Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-        Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(6, 6));
 
-        erode(filtered, filtered, erodeElement);
-        erode(filtered, filtered, erodeElement);
+        imgProc(hsvBoundsGreen, hsv, filtered);
+        detectObjects(greenBlobs, filtered, GREEN);
+        if (CALIB)
+            imshow("Green filtered", filtered);
 
-        dilate(filtered, filtered, dilateElement);
-        dilate(filtered, filtered, dilateElement);
+        cout << "Frame # " << frameCnt++ << "\n\n\n";
 
-        cout << "Frame # " << frameCnt++ << "\n";
-
-        if (detectObjects(redBlobs, filtered, RED)) {
+        /*if (redBlobs.size() != 0) {
             for (int i = 0; i < redBlobs.size(); i++) {
                 cout << "Blob x :  " << redBlobs[i].getPosX()
                 << " y : " << redBlobs[i].getPosY() <<
@@ -69,14 +60,21 @@ int main(int argc, char **argv) {
             }
         }
 
+        if (greenBlobs.size() != 0) {
+            for (int i = 0; i < greenBlobs.size(); i++) {
+                cout << "Blob x :  " << greenBlobs[i].getPosX()
+                << " y : " << greenBlobs[i].getPosY() <<
+                " ; aire : " << greenBlobs[i].getArea() << "\t";
+            }
+        }*/
+
 
 
         //show frames
-        imshow("filtered", filtered);
-        imshow("camera", img);
-        imshow("HSV image", hsv);
-
-
+        if (CALIB) {
+            imshow("camera", img);
+            imshow("HSV image", hsv);
+        }
         if (waitKey(500) == 27)
             break;
 
