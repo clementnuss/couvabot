@@ -12,10 +12,13 @@ endif()
 
 find_package(OpenCV REQUIRED)
 
+include_directories(../RPi/bcm2835-1.49/src/)
+link_directories(../RPi/bcm2835-1.49/src)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp src/camera.cpp src/detectObjects.cpp src/Blob.cpp)
+set(SOURCE_FILES main.cpp src/camera.cpp src/detectObjects.cpp src/Blob.cpp src/SPICom.cpp)
 add_executable(main ${SOURCE_FILES})
 
-target_link_libraries(main ${OpenCV_LIBS})
+target_link_libraries(main ${OpenCV_LIBS} bcm2835)
 

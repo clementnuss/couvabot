@@ -29,8 +29,9 @@ using namespace cv;
 using namespace std;
 
 bool initCam();
-
+void capBlobs(Mat hsv, Mat & filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs);
 int main(int argc, char **argv);
+
 
 struct HSVbounds {
     int hMin = 0, sMin = 0, vMin = 0,
