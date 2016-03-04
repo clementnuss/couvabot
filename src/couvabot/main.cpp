@@ -30,7 +30,8 @@ int main(int argc, char **argv) {
     if (!initCam())
         cerr << "Camera initialization error !!!";
 
-    arduiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CS0);
+    if (RPI)
+        arduiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CS0);
 
     if (CALIB) {
         createTrackbars(hsvBoundsGreen, "Green Trackbars");
@@ -69,11 +70,16 @@ int main(int argc, char **argv) {
 
         if (redBlobs.size() >= greenBlobs.size()) {
 
-            readData = arduiCom->spi_transfer('c');
-            printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n",
-                   sendData, sendData, readData, readData);
+
         }
 
+
+        /*
+         *       readData = arduiCom->spi_transfer('c');
+            printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n",
+                   sendData, sendData, readData, readData);
+         *
+         */
 
 
         //show frames
@@ -86,9 +92,11 @@ int main(int argc, char **argv) {
 
     }
 
-    bcm2835_spi_end();
-    bcm2835_close();
 
+    if (RPI) {
+        bcm2835_spi_end();
+        bcm2835_close();
+    }
     cout << "End of program!";
 
 

@@ -29,7 +29,7 @@ using namespace cv;
 using namespace std;
 
 bool initCam();
-void capBlobs(Mat hsv, Mat & filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs);
+void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs);
 int main(int argc, char **argv);
 
 
