@@ -84,8 +84,8 @@ public:
   -marker is used as a pointer to keep track of the current
    position in the incoming data packet
 ***************************************************************/
-unsigned char receiveBuffer[4];
-unsigned char dat;
+uint8_t receiveBuffer[4];
+uint8_t dat;
 byte marker = 0;
 
 char param1, param2, param3;
@@ -110,7 +110,7 @@ void spiHandler(void);
 void setup() {
     pinMode(MISO, OUTPUT);
     SPCR |= _BV(SPE);
-    SPDR = 'I'; // Initialize SPDR to 'I'
+    SPDR = 'h'; // Initialize SPDR to 'h' -- heartbeat char, default char on SPDR.
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
 }
@@ -135,6 +135,7 @@ void commandDecoder(void) {
     switch (receiveBuffer[0]) {
         case 'm':
             marker++;             // Motor movement
+            SPDR = 'M'; // Acknowledge motor command
             break;
         case 'r':
             marker = 0;           // Red puck
@@ -207,7 +208,7 @@ void spiHandler(void) {
         case 0:
             dat = SPDR;
             if (dat == 'c') {
-                SPDR = 'a';
+                SPDR = 'A'; // Acknowledge spi communication start
                 marker++;
             }
             break;
@@ -227,6 +228,8 @@ void spiHandler(void) {
             receiveBuffer[marker - 1] = SPDR;
             marker = 0;
             motorDecoder();
+        default:
+            SPDR = 'h'; // heartbeat on SPDR -- default char
     }
 
 }
