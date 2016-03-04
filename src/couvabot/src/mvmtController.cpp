@@ -28,7 +28,7 @@ bool mvmtController::move(int x, int y) {
 }
 
 uint8_t mvmtController::getPWM(double p) {
-    return (int) (maxPWM * p);
+    return (uint8_t) (maxPWM * p);
 }
 
 bool mvmtController::arduiCommand(double pL, double pR) {
@@ -36,7 +36,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     bool rightForward = pR >= 0;
 
     readData = arduiCom->CS0_transfer('c');
-    if (readData != 'a') {
+    if (readData != 'A') {
         cerr << "Protocol error!";
         return false;
     }
