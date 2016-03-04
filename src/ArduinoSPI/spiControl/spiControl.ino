@@ -94,8 +94,8 @@ unsigned char state[2];
 // MOTORS
 Motor motorA(AIN1_GEAR, AIN2_GEAR, PWMA_GEAR);
 Motor motorB(BIN1_GEAR, BIN2_GEAR, PWMB_GEAR);
-volatile unsigned long rotTimeBegin = 0;
-volatile unsigned long rotTimeEnd = 0;
+volatile unsigned int rotTimeBegin = 0;
+volatile unsigned int rotTimeEnd = 0;
 bool rotationEnable = 0;
 
 // Function declaration ----------------------------------
@@ -110,6 +110,7 @@ void spiHandler(void);
 void setup() {
     pinMode(MISO, OUTPUT);
     SPCR |= _BV(SPE);
+    SPDR = 'I'; // Initialize SPDR to 'I'
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
 }

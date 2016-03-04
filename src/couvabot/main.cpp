@@ -11,7 +11,6 @@
 int        CAMERA_ANGLE = 0;
 GenericCam *cam;
 HSVbounds  hsvBoundsGreen, hsvBoundsRed;
-SPICom     *arduiCom;
 
 bool initCam() {
     if (RPI)
@@ -30,14 +29,11 @@ int main(int argc, char **argv) {
     if (!initCam())
         cerr << "Camera initialization error !!!";
 
-    if (RPI)
-        arduiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CS0);
 
     if (CALIB) {
         createTrackbars(hsvBoundsGreen, "Green Trackbars");
         createTrackbars(hsvBoundsRed, "Red Trackbars");
     }
-
 
     int frameCnt = 0;
 
@@ -74,14 +70,6 @@ int main(int argc, char **argv) {
         }
 
 
-        /*
-         *       readData = arduiCom->spi_transfer('c');
-            printf("Sent to SPI: 0x%02X (char : %c). Read back from SPI: 0x%02X (char : %c).\n",
-                   sendData, sendData, readData, readData);
-         *
-         */
-
-
         //show frames
         if (CALIB) {
             imshow("camera", img);
@@ -115,8 +103,4 @@ void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &gre
     detectObjects(greenBlobs, filtered, GREEN);
     if (CALIB)
         imshow("Green filtered", filtered);
-}
-
-void moveBot(int x, int y) {
-    //Todo: to do!
 }
