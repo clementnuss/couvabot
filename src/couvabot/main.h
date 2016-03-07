@@ -5,15 +5,27 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI false
+#define RPI true
 #define CALIB false
 
 
-#ifndef RPI
+#ifdef RPI
 //include Raspberry things (Raspicam library)
+#define KEY_UP 65362
+#define KEY_DOWN 65364
+#define KEY_LEFT 65361
+#define KEY_RIGHT 65363
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 240
+
 #else
 #define FRAME_WIDTH 320
 #define FRAME_HEIGHT 240
+
+#define KEY_UP 2490368
+#define KEY_DOWN 2621440
+#define KEY_LEFT 2424832
+#define KEY_RIGHT 2555904
 #endif
 
 
@@ -25,10 +37,7 @@
 #include "src/camera.h"
 #include "src/Blob.h"
 
-#define KEY_UP 2490368
-#define KEY_DOWN 2621440
-#define KEY_LEFT 2424832
-#define KEY_RIGHT 2555904
+
 
 using namespace cv;
 using namespace std;
