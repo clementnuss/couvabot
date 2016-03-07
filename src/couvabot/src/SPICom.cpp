@@ -30,9 +30,9 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, LOW);
 
 
-    uint8_t readData = CS0_transfer('h'); //Send heartbeat char 'h'
-    if (readData != 'I') {
-        cerr << "Arduino doesnt have 'I' in SPDR .. waiting 300ms";
+    uint8_t readData = CS0_transfer('H'); //Send RPi heartbeat char 'H'
+    if (readData != 'h') {
+        cerr << "Arduino doesnt have 'h' in SPDR .. waiting 300ms";
         usleep(300); // Wait 300ms if no comm with Arduino
     }
     readData = CS0_transfer('H'); //Send RPI heartbeat char 'H'

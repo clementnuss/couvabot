@@ -25,7 +25,6 @@
 #include "src/camera.h"
 #include "src/Blob.h"
 
-
 using namespace cv;
 using namespace std;
 

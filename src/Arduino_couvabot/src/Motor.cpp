@@ -17,7 +17,7 @@ Motor::Motor(uint8_t pin1, uint8_t pin2, uint8_t pwm) {
     pinMode(motorPWMPin, OUTPUT); // Must be analog output
 }
 
-void Motor::drive(int vel, int orientation) {
+void Motor::drive(uint8_t vel, uint8_t orientation) {
     velocity = vel;
     orient1 = LOW;
     orient2 = HIGH;

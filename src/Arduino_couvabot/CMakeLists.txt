@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 2.8)
 project(Arduino_couvabot)
 
 set(${CMAKE_PROJECT_NAME}_SKETCH  couvabot.ino)
-set(${CMAKE_PROJECT_NAME}_SRCS  src/Motor.cpp)
+set(${CMAKE_PROJECT_NAME}_SRCS  couvabot.ino src/Motor.cpp)
 set(${CMAKE_PROJECT_NAME}_BOARD mega)
 
 set(mega.build.mcu atmega2560)

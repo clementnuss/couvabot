@@ -14,7 +14,7 @@ mvmtController::mvmtController() {
     if (!RPI) {
         try {
             //first clock divider for Arduino
-            arduiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
+            spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
         } catch (string exception){
             cerr << "Caught exception : " << exception;
         }
@@ -35,14 +35,23 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     bool leftForward  = pL >= 0;
     bool rightForward = pR >= 0;
 
-    readData = arduiCom->CS0_transfer('c');
-    if (readData != 'A') {
+    readData = spiCom->CS0_transfer('M');
+    if (readData != 'h') {
         cerr << "Protocol error!";
         return false;
     }
+    uint8_t controlByte = 0;
+    if (abs(pL) >= 0.02f)
+        controlByte = (uint8_t) (pL ? (0xF << 4) : (0xB << 4));
+    if (abs(pL) >= 0.02f)
+        controlByte = (uint8_t) (pL ? (0xF) : (0xB));
 
-    readData = arduiCom->CS0_transfer(getPWM(pL));
-    //TODO: ajouter les autres commandes, selon protocole de communication
+    readData = spiCom->CS0_transfer(controlByte);
+    if (readData != 'm')
+        cerr << "Protocol error while sending controlByte";
+
+    spiCom->CS0_transfer(getPWM(pL));
+    spiCom->CS0_transfer(getPWM(pR));
 
     return true;
 

@@ -12,6 +12,7 @@ int        CAMERA_ANGLE = 0;
 GenericCam *cam;
 HSVbounds  hsvBoundsGreen, hsvBoundsRed;
 
+
 bool initCam() {
     if (RPI)
         cam = new RPiCam();
@@ -24,7 +25,6 @@ int main(int argc, char **argv) {
 
     Mat          img, hsv, filtered;
     vector<Blob> redBlobs, greenBlobs;
-    uint8_t      readData, sendData;
 
     if (!initCam())
         cerr << "Camera initialization error !!!";

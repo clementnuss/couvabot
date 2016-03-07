@@ -21,7 +21,7 @@ class Motor {
 public:
     Motor(uint8_t pin1, uint8_t pin2, uint8_t pwm);
 
-    void drive(int vel, int orientation);
+    void drive(uint8_t vel, uint8_t orientation);
 
     void mStop(void);
 };

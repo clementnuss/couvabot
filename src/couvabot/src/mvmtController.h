@@ -13,7 +13,7 @@ namespace mvmtCtrl {
 
     class mvmtController {
         int    maxPWM;
-        SPICom *arduiCom;
+        SPICom *spiCom;
         uint8_t readData, sendData;
 
     public:
