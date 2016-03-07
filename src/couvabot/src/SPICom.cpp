@@ -6,8 +6,7 @@
 #include "SPICom.h"
 
 bool bcm2835Initialized = false;
-#ifndef RPI
-
+#ifdef RPI
 
 /**
  * Constructor of an SPICom instance. Initializes the CS0 settings by default
@@ -61,6 +60,12 @@ uint8_t SPICom::CS1_transfer(uint8_t send_data) {
     }
 
     return bcm2835_spi_transfer(send_data);
+}
+#endif
+#ifndef RPI
+uint8_t SPICom::CS0_transfer(uint8_t send_data) {
+
+    return 'D'; //Default dummy data
 }
 
 #endif

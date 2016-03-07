@@ -11,7 +11,7 @@ mvmtController::mvmtController() {
 
     maxPWM = (8 * 255) / VBAT;
 
-    if (!RPI) {
+    if (RPI) {
         try {
             //first clock divider for Arduino
             spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);

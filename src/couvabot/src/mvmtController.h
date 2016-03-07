@@ -12,8 +12,8 @@
 namespace mvmtCtrl {
 
     class mvmtController {
-        int    maxPWM;
-        SPICom *spiCom;
+        int     maxPWM;
+        SPICom  *spiCom;
         uint8_t readData, sendData;
 
     public:
@@ -21,6 +21,7 @@ namespace mvmtCtrl {
         mvmtController();
 
         bool move(int x, int y);
+
         bool arduiCommand(double pL, double pR);
 
     private:

@@ -4,14 +4,16 @@
 //
 //
 
+#include <unistd.h>
 #include "main.h"
 #include "src/detectObjects.h"
 #include "src/SPICom.h"
+#include "src/mvmtController.h"
 
 int        CAMERA_ANGLE = 0;
 GenericCam *cam;
 HSVbounds  hsvBoundsGreen, hsvBoundsRed;
-
+mvmtCtrl::mvmtController* mvCtrl;
 
 bool initCam() {
     if (RPI)
@@ -26,8 +28,8 @@ int main(int argc, char **argv) {
     Mat          img, hsv, filtered;
     vector<Blob> redBlobs, greenBlobs;
 
-    if (!initCam())
-        cerr << "Camera initialization error !!!";
+    /*if (!initCam())
+        cerr << "Camera initialization error !!!";*/
 
 
     if (CALIB) {
@@ -35,7 +37,49 @@ int main(int argc, char **argv) {
         createTrackbars(hsvBoundsRed, "Red Trackbars");
     }
 
-    int frameCnt = 0;
+    mvCtrl = new mvmtCtrl::mvmtController();
+
+    int speedInt = 100;
+    double speed = 1.0;
+    int c = 0;
+
+    namedWindow("Speeds", 0);
+    createTrackbar("speed", "Speeds", &speedInt, 100, nullptr);
+
+    while (1) {
+
+        switch ((c = waitKey(500))) {
+            case KEY_UP:
+                cout << endl << "Up" << endl;//key up
+
+                mvCtrl->arduiCommand(speed, speed);
+                break;
+            case KEY_DOWN:
+
+                cout << endl << "Down" << endl;   // key down
+
+                speed -= 0.3f;
+                mvCtrl->arduiCommand(speed, speed);
+                break;
+            case KEY_LEFT:
+                cout << endl << "Left" << endl;  // key left
+
+                mvCtrl->arduiCommand(speed-0.2f, speed);
+                break;
+            case KEY_RIGHT:
+                cout << endl << "Right" << endl;  // key right
+
+                mvCtrl->arduiCommand(speed, speed-0.2f);
+                break;
+            default:
+                cout << endl << "char : " << c << endl;  // not arrow
+                break;
+        }
+
+        speedInt = (int) (speed * 100);
+
+        usleep(100000);
+    }
 
     while (1) {
 
@@ -43,7 +87,7 @@ int main(int argc, char **argv) {
         cam->read(img);
         cvtColor(img, hsv, COLOR_BGR2HSV);
 
-        cout << "Frame # " << frameCnt++ << "\n\n\n";
+        // cout << "Frame # " << frameCnt++ << "\n\n\n";
 
         capBlobs(hsv, filtered, redBlobs, greenBlobs);
 

@@ -6,7 +6,7 @@
 #define COUVABOT_MAIN_H
 
 #define RPI false
-#define CALIB true
+#define CALIB false
 
 
 #ifndef RPI
@@ -18,12 +18,18 @@
 
 
 #include <iostream>
+#include <conio.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "src/camera.h"
 #include "src/Blob.h"
+
+#define KEY_UP 2490368
+#define KEY_DOWN 2621440
+#define KEY_LEFT 2424832
+#define KEY_RIGHT 2555904
 
 using namespace cv;
 using namespace std;
