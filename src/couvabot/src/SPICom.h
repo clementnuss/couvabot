@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <bcm2835.h>
+#include "../main.h"
 
 using namespace std;
 
