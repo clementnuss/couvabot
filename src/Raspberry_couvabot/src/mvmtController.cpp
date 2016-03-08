@@ -37,9 +37,11 @@ bool mvmtController::arduiCommand(double pL, double pR) {
 
     readData = spiCom->CS0_transfer('M');
     if (readData != 'h') {
-        cerr << "Protocol error!";
+        cerr << "Protocol error!\n";
         return false;
     }
+    usleep(100);
+
     uint8_t controlByte = 0;
     if (abs(pL) >= 0.02f)
         controlByte = (uint8_t) (pL ? (0xF << 4) : (0xB << 4));
@@ -52,6 +54,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
         cerr << "Received" << readData << "\n";
         return false;
     }
+    usleep(100);
 
     spiCom->CS0_transfer(getPWM(pL));
     if (readData != 'o') {
@@ -59,6 +62,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
         cerr << "Received" << readData << "\n";
         return false;
     }
+    usleep(100);
 
     spiCom->CS0_transfer(getPWM(pR));
     if (readData != 'k') {
@@ -66,6 +70,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
         cerr << "Received" << readData << "\n";
         return false;
     }
+    usleep(100);
 
     spiCom->CS0_transfer(getPWM('E'));
     if (readData != 'o') {

@@ -30,6 +30,8 @@
 
 
 #include <iostream>
+#include <unistd.h>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -38,12 +40,13 @@
 #include "src/Blob.h"
 
 
-
 using namespace cv;
 using namespace std;
 
 bool initCam();
+
 void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs);
+
 int main(int argc, char **argv);
 
 
