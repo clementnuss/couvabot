@@ -49,24 +49,28 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     readData = spiCom->CS0_transfer(controlByte);
     if (readData != 'm') {
         cerr << "Protocol error after having sent controlByte\n";
+        cerr << "Received" << readData << "\n";
         return false;
     }
 
     spiCom->CS0_transfer(getPWM(pL));
     if (readData != 'o') {
         cerr << "Protocol error after having sent pL\n";
+        cerr << "Received" << readData << "\n";
         return false;
     }
 
     spiCom->CS0_transfer(getPWM(pR));
     if (readData != 'k') {
         cerr << "Protocol error after having sent pR\n";
+        cerr << "Received" << readData << "\n";
         return false;
     }
 
     spiCom->CS0_transfer(getPWM('E'));
     if (readData != 'o') {
         cerr << "Protocol error after having sent EOT\n";
+        cerr << "Received" << readData << "\n";
         return false;
     }
     return true;
