@@ -7,9 +7,10 @@
   -marker is used as a pointer to keep track of the current
    position in the incoming data packet
 ***************************************************************/
-uint8_t receiveBuffer[3];
+uint8_t receiveBuffer[5];
 uint8_t dat;
 byte marker = 0;
+bool dataWaiting;
 
 int timeout = 0;
 uint8_t state[2];
@@ -24,7 +25,7 @@ bool rotationEnable = 0;
 void setup() {
     pinMode(MISO, OUTPUT);
     SPCR |= _BV(SPE);
-    SPDR = 'h'; // Initialize SPDR to 'h' -- heartbeat char, default char on SPDR.
+    initSPI(); // Initialize SPDR to 'h' -- heartbeat char, default char on SPDR.
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
 }
@@ -45,48 +46,79 @@ void loop() {
     }
 }
 
-void spiHandler(void) {
+void spiHandler() {
+
     switch (marker) {
         case 0:
-            dat = SPDR;
-            if (dat == 'c') {
-                SPDR = 'A'; // Acknowledge spi communication start
-                marker++;
-            }
+            if (SPDR == 'H') {
+                if (dataWaiting) {
+                    sendData();
+                }
+                else {
+                    SPDR = 'h'; // Acknowledge spi communication start
+                    marker++;
+                }
+            } else
+                initSPI();
             break;
-        case 1:
+        case 6:
+            initSPI();      //Resets SPI communication stack
+        default:
             receiveBuffer[marker - 1] = SPDR;
             commandDecoder();
-            break;
-        case 2:
-            receiveBuffer[marker - 1] = SPDR;
-            marker++;
-            break;
-        case 3:
-            receiveBuffer[marker - 1] = SPDR;
-            marker = 0;
-            motorDecoder();
-        default:
-            SPDR = 'h'; // heartbeat on SPDR -- default char
-            for (int i = 0; i < 3; ++i) {
-                receiveBuffer[i] = 0;
-            }
+
     }
 }
 
-void commandDecoder(void) {
+void sendData() {
+
+}
+
+void initSPI() {
+    SPDR = 'h'; // heartbeat on SPDR -- default char
+    for (int i = 0; i < 5; ++i) {
+        receiveBuffer[i] = 0;
+    }
+    marker = 0;
+}
+
+void commandDecoder() {
     switch (receiveBuffer[0]) {
         case 'M':
-            marker++;             // Motor movement
-            SPDR = 'm'; // Acknowledge motor command
+            switch (marker) {
+                case 1:
+                    marker++;
+                    SPDR = 'm';     // Acknowledge motor command
+                    break;
+                case 2:
+                    marker++;
+                    SPDR = 'o';
+                    break;
+                case 3:
+                    marker++;
+                    SPDR = 'k';
+                    break;
+                case 4:
+                    marker++;
+                    SPDR = 'o';
+                    break;
+                case 5:
+                    if (SPDR == 'E')
+                        motorDecoder();
+                    else
+                        initSPI();
+
+                default:
+                    initSPI();
+            }
             break;
-        case 'r':
-            marker = 0;           // Red puck
-            //servoPrepare(M_RED);
+        case 'L':
+            initSPI();
+            //servoPrepare(left container);
             break;
-        case 'g':
-            marker = 0;           // Green puck
-            //servoPrepare(M_GREEN);
+        case 'R':
+            initSPI();
+            //servoPrepare(right container);
             break;
         case 'k':
             marker = 0;           // Catch the puck
@@ -95,8 +127,10 @@ void commandDecoder(void) {
         case 'f':
             marker = 0;           // Release all pucks
             //freePucks();
+            break;
+
         default:
-            SPDR = 'h';
+            initSPI();
             break;
     }
 }
@@ -106,24 +140,29 @@ int angleConvert(int rotAngle, int rotSpeed) {
     travelTime = floor((rotAngle / rotSpeed) * 1000);
 }
 
-void motorDecoder(void) {
-    uint8_t ctrlLeft = (receiveBuffer[0] & (0xF << 4)) >> 4;
-    uint8_t ctrlRight = (receiveBuffer[0] & 0xF);
+void motorDecoder() {
+    uint8_t ctrlLeft = (receiveBuffer[1] & (0xF << 4)) >> 4;
+    uint8_t ctrlRight = (receiveBuffer[1] & 0xF);
 
-    uint8_t pL = receiveBuffer[1];
-    uint8_t pR = receiveBuffer[2];
+    uint8_t pL = receiveBuffer[2];
+    uint8_t pR = receiveBuffer[3];
+
+    if (receiveBuffer[1] == 0) {
+        analogWrite(STBY_GEAR, LOW);
+        return;
+    }
 
     switch (ctrlLeft) {
         case 0xF:  // Forward
-            digitalWrite(STBY_GEAR, HIGH);  // l for left
+            digitalWrite(STBY_GEAR, HIGH);
             motorLeft.drive(pL, FORWARD);
             break;
         case 0xB:  // Backward
-            digitalWrite(STBY_GEAR, HIGH);  // l for left
+            digitalWrite(STBY_GEAR, HIGH);
             motorLeft.drive(pL, BACKWARD);
             break;
         case 0x0:
-            digitalWrite(STBY_GEAR, LOW);  //both
+            digitalWrite(STBY_GEAR, LOW);
             motorLeft.mStop();
             break;
 
@@ -134,15 +173,15 @@ void motorDecoder(void) {
 
     switch (ctrlRight) {
         case 0xF:  // Forward
-            digitalWrite(STBY_GEAR, HIGH);  // l for left
+            digitalWrite(STBY_GEAR, HIGH);
             motorRight.drive(pL, FORWARD);
             break;
         case 0xB:  // Backward
-            digitalWrite(STBY_GEAR, HIGH);  // l for left
+            digitalWrite(STBY_GEAR, HIGH);
             motorRight.drive(pL, BACKWARD);
             break;
         case 0x0:
-            digitalWrite(STBY_GEAR, LOW);  //both
+            digitalWrite(STBY_GEAR, LOW);
             motorRight.mStop();
             break;
 
@@ -150,8 +189,6 @@ void motorDecoder(void) {
             timeout++;
             break;
     }
-
-
 
 
     /*

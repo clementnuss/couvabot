@@ -6,7 +6,8 @@
 #include "SPICom.h"
 
 bool bcm2835Initialized = false;
-#ifdef RPI
+
+#if RPI
 
 /**
  * Constructor of an SPICom instance. Initializes the CS0 settings by default
@@ -14,11 +15,11 @@ bool bcm2835Initialized = false;
 SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1) {
 
     cout << "Initialising SPI object" << endl;
-    this->clockCS0   = clockCS0;
-    this->clockCS1   = clockCS1;
+    this->clockCS0 = clockCS0;
+    this->clockCS1 = clockCS1;
     this->chipSelect = BCM2835_SPI_CS0;
 
-      if (!bcm2835_init())
+    if (!bcm2835_init())
         cerr << "Big error during initialization of bcm2835 library!!";
 
 
@@ -38,16 +39,17 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     uint8_t readData = CS0_transfer('H'); //Send RPi heartbeat char 'H'
     if (readData != 'h') {
         cerr << "Arduino doesnt have 'h' in SPDR .. waiting 300ms" << "\n";
-	cerr << "instead it has: " << readData << "\n";
-        usleep(300); // Wait 300ms if no comm with Arduino
+        cerr << "instead it has: " << readData << "\n";
+        usleep(3000); // Wait 3ms if no comm with Arduino
     }
+
+
     readData = CS0_transfer('H'); //Send RPI heartbeat char 'H'
-/*    
-if (readData != 'h') {
+    if (readData != 'h') {
         cerr << "Arduino again doesnt have 'h' in SPDR .. Aborting communication" << "\n";
-	cerr << "instead it has: " << readData << "\n";
+        cerr << "instead it has: " << readData << "\n";
         throw "SPI initializazion error";
-    }*/
+    }
 
 }
 
@@ -70,11 +72,12 @@ uint8_t SPICom::CS1_transfer(uint8_t send_data) {
 
     return bcm2835_spi_transfer(send_data);
 }
+
 #endif
-#ifndef RPI
+
+#if !RPI
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
 
     return 'D'; //Default dummy data
 }
-
 #endif

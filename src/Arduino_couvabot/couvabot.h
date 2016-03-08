@@ -39,11 +39,15 @@
 // Function declaration ----------------------------------
 int angleConvert(int rotAngle, int rotSpeed);
 
-void commandDecoder(void);
+void commandDecoder();
 
-void motorDecoder(void);
+void motorDecoder();
 
-void spiHandler(void);
+void spiHandler();
+
+void initSPI();
+
+void sendData();
 
 
 #endif //ARDUINO_COUVABOT_COUVABOT_H

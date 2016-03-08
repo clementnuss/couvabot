@@ -9,13 +9,13 @@ using namespace mvmtCtrl;
 
 mvmtController::mvmtController() {
 
-    maxPWM = (8 * 255) / VBAT;
+    maxPWM = (int) ((8 * 255) / VBAT);
 
     if (RPI) {
         try {
             //first clock divider for Arduino
             spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
-        } catch (string exception){
+        } catch (string exception) {
             cerr << "Caught exception : " << exception;
         }
     }
@@ -32,7 +32,7 @@ uint8_t mvmtController::getPWM(double p) {
 }
 
 bool mvmtController::arduiCommand(double pL, double pR) {
-    bool leftForward  = pL >= 0;
+    bool leftForward = pL >= 0;
     bool rightForward = pR >= 0;
 
     readData = spiCom->CS0_transfer('M');
@@ -47,13 +47,28 @@ bool mvmtController::arduiCommand(double pL, double pR) {
         controlByte = (uint8_t) (pL ? (0xF) : (0xB));
 
     readData = spiCom->CS0_transfer(controlByte);
-    if (readData != 'm')
-        cerr << "Protocol error while sending controlByte";
+    if (readData != 'm') {
+        cerr << "Protocol error after having sent controlByte\n";
+        return false;
+    }
 
     spiCom->CS0_transfer(getPWM(pL));
+    if (readData != 'o') {
+        cerr << "Protocol error after having sent pL\n";
+        return false;
+    }
+
     spiCom->CS0_transfer(getPWM(pR));
+    if (readData != 'k') {
+        cerr << "Protocol error after having sent pR\n";
+        return false;
+    }
 
+    spiCom->CS0_transfer(getPWM('E'));
+    if (readData != 'o') {
+        cerr << "Protocol error after having sent EOT\n";
+        return false;
+    }
     return true;
-
 }
 

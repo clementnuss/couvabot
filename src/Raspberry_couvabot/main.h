@@ -5,11 +5,11 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI true
+#define RPI false
 #define CALIB false
 
 
-#ifdef RPI
+#if RPI
 //include Raspberry things (Raspicam library)
 #define KEY_UP 65362
 #define KEY_DOWN 65364
