@@ -38,17 +38,16 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
 
     uint8_t readData = CS0_transfer('H'); //Send RPi heartbeat char 'H'
     if (readData != 'h') {
-        cerr << "Arduino doesnt have 'h' in SPDR .. waiting 300ms" << "\n";
+        cerr << "Arduino doesnt have 'h' in SPDR .. waiting 3ms" << "\n";
         cerr << "instead it has: " << readData << "\n";
         usleep(3000); // Wait 3ms if no comm with Arduino
-    }
 
-
-    readData = CS0_transfer('H'); //Send RPI heartbeat char 'H'
-    if (readData != 'h') {
-        cerr << "Arduino again doesnt have 'h' in SPDR .. Aborting communication" << "\n";
-        cerr << "instead it has: " << readData << "\n";
-        throw "SPI initializazion error";
+        readData = CS0_transfer('H'); //Send RPI heartbeat char 'H'
+        if (readData != 'h') {
+            cerr << "Arduino again doesnt have 'h' in SPDR .. Aborting communication" << "\n";
+            cerr << "instead it has: " << readData << "\n";
+            throw "SPI initializazion error";
+        }
     }
 
 }
