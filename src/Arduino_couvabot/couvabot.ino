@@ -102,7 +102,6 @@ void commandDecoder() {
                 case 4:
                     marker++;
                     SPDR = 'o';
-                    motorDecoder();
                     break;
                 case 5:
                     if (SPDR == 'E')
@@ -146,13 +145,10 @@ void motorDecoder() {
     uint8_t pL = receiveBuffer[2];
     uint8_t pR = receiveBuffer[3];
 
-    /*
-     * TODO: régler problème du STDBY_GEAR
     if (receiveBuffer[1] == 0) {
         analogWrite(STBY_GEAR, LOW);
         return;
     }
-     */
 
     digitalWrite(STBY_GEAR, HIGH);
     motorLeft.drive(pL, FORWARD);
@@ -160,7 +156,6 @@ void motorDecoder() {
     digitalWrite(STBY_GEAR, HIGH);
     motorRight.drive(pR, FORWARD);
 
-    /*
     switch (ctrlLeft) {
         case 0xF:  // Forward
             digitalWrite(STBY_GEAR, HIGH);
@@ -197,8 +192,7 @@ void motorDecoder() {
         default:
             timeout++;
             break;
-    }*/
-
+    }
 
     /*
          * TODO: Ancien code, a réutiliser pour implémenter les "virages"

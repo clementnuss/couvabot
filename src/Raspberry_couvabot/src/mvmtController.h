@@ -7,7 +7,7 @@
 
 #include "SPICom.h"
 
-#define VBAT 11.60
+#define VBAT 11.56
 
 namespace mvmtCtrl {
 

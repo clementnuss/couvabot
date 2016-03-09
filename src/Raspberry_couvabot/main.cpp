@@ -10,10 +10,10 @@
 #include "src/SPICom.h"
 #include "src/mvmtController.h"
 
-int        CAMERA_ANGLE = 0;
+int CAMERA_ANGLE = 0;
 GenericCam *cam;
-HSVbounds  hsvBoundsGreen, hsvBoundsRed;
-mvmtCtrl::mvmtController* mvCtrl;
+HSVbounds hsvBoundsGreen, hsvBoundsRed;
+mvmtCtrl::mvmtController *mvCtrl;
 
 bool initCam() {
     if (RPI)
@@ -25,7 +25,7 @@ bool initCam() {
 
 int main(int argc, char **argv) {
 
-    Mat          img, hsv, filtered;
+    Mat img, hsv, filtered;
     vector<Blob> redBlobs, greenBlobs;
 
     /*if (!initCam())
@@ -42,6 +42,8 @@ int main(int argc, char **argv) {
     int speedInt = 100;
     double speed = 1.0;
     int c = 0;
+    bool left, right;
+
 
     namedWindow("Speeds", 0);
     createTrackbar("speed", "Speeds", &speedInt, 100, nullptr);
@@ -51,26 +53,39 @@ int main(int argc, char **argv) {
         switch ((c = waitKey(500))) {
             case KEY_UP:
                 cout << endl << "Up" << endl;//key up
-		speed += 0.2f;
+                speed = std::min(speed + 0.2, 1.0);
                 mvCtrl->arduiCommand(speed, speed);
                 break;
             case KEY_DOWN:
-
                 cout << endl << "Down" << endl;   // key down
+                speed = std::max(speed - 0.2, -1.0);
 
-                speed -= 0.3f;
                 mvCtrl->arduiCommand(speed, speed);
                 break;
             case KEY_LEFT:
-                cout << endl << "Left" << endl;  // key left
-
-                mvCtrl->arduiCommand(speed-0.2f, speed);
-                break;
+                if (left) {
+                    mvCtrl->arduiCommand(speed, speed);
+                    left = false;
+                    break;
+                }
+                else {
+                    cout << endl << "Left" << endl;  // key left
+                    mvCtrl->arduiCommand(speed - 0.3f, speed);
+                    left = true;
+                    break;
+                }
             case KEY_RIGHT:
-                cout << endl << "Right" << endl;  // key right
-
-                mvCtrl->arduiCommand(speed, speed-0.2f);
-                break;
+                if (right) {
+                    mvCtrl->arduiCommand(speed, speed);
+                    right = false;
+                    break;
+                }
+                else {
+                    cout << endl << "Right" << endl;  // key right
+                    mvCtrl->arduiCommand(speed, speed - 0.3f);
+                    right = true;
+                    break;
+                }
             default:
                 cout << endl << "char : " << c << endl;  // not arrow
                 break;

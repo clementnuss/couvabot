@@ -32,11 +32,9 @@ uint8_t mvmtController::getPWM(double p) {
 }
 
 bool mvmtController::arduiCommand(double pL, double pR) {
-    bool leftForward = pL >= 0;
-    bool rightForward = pR >= 0;
 
-    int pwmL = getPWM(pL);
-    int pwmR = getPWM(pR);
+    int pwmL = getPWM(abs(pL));
+    int pwmR = getPWM(abs(pR));
     cout << "pwmL: " << pwmL << " et pwmR: " << pwmR << "\n";
 
     readData = spiCom->CS0_transfer('H');
