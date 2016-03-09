@@ -50,15 +50,15 @@ int main(int argc, char **argv) {
 
     while (1) {
 
-        switch ((c = waitKey(500))) {
+        switch ((c = waitKey(200))) {
             case KEY_UP:
                 cout << endl << "Up" << endl;//key up
-                speed = std::min(speed + 0.2, 1.0);
+                speed = std::min(speed + 0.1, 1.0);
                 mvCtrl->arduiCommand(speed, speed);
                 break;
             case KEY_DOWN:
                 cout << endl << "Down" << endl;   // key down
-                speed = std::max(speed - 0.2, -1.0);
+                speed = std::max(speed - 0.1, -1.0);
 
                 mvCtrl->arduiCommand(speed, speed);
                 break;

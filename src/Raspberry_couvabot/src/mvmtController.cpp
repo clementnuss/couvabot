@@ -33,8 +33,8 @@ uint8_t mvmtController::getPWM(double p) {
 
 bool mvmtController::arduiCommand(double pL, double pR) {
 
-    uint8_t pwmL = getPWM(abs(pL));
-    uint8_t pwmR = getPWM(abs(pR));
+    int pwmL = getPWM(abs(pL));
+    int pwmR = getPWM(abs(pR));
     cout << "pwmL: " << pwmL << " et pwmR: " << pwmR << "\n";
 
     readData = spiCom->CS0_transfer('H');
@@ -69,7 +69,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     }
     usleep(1000);
 
-    readData = spiCom->CS0_transfer(pwmL);
+    readData = spiCom->CS0_transfer(getPWM(pL));
     if (readData != 'o') {
         cerr << "Protocol error after having sent pL\n";
         cerr << "Received: " << readData << "\n";
@@ -77,7 +77,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     }
     usleep(1000);
 
-    readData = spiCom->CS0_transfer(pwmR);
+    readData = spiCom->CS0_transfer(getPWM(pR));
     if (readData != 'k') {
         cerr << "Protocol error after having sent pR\n";
         cerr << "Received: " << readData << "\n";
