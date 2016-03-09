@@ -51,11 +51,12 @@ void spiHandler() {
     switch (marker) {
         case 0:
             if (SPDR == 'H') {
+                //TODO: move to initSPI()
                 if (dataWaiting) {
                     sendData();
                 }
                 else {
-                    SPDR = 'h'; // Acknowledge spi communication start
+                    SPDR = 'a'; // Acknowledges spi communication start
                     marker++;
                 }
             } else
@@ -101,13 +102,11 @@ void commandDecoder() {
                 case 4:
                     marker++;
                     SPDR = 'o';
+                    motorDecoder();
                     break;
                 case 5:
                     if (SPDR == 'E')
                         motorDecoder();
-                    else
-                        initSPI();
-
                 default:
                     initSPI();
             }
@@ -147,11 +146,21 @@ void motorDecoder() {
     uint8_t pL = receiveBuffer[2];
     uint8_t pR = receiveBuffer[3];
 
+    /*
+     * TODO: régler problème du STDBY_GEAR
     if (receiveBuffer[1] == 0) {
         analogWrite(STBY_GEAR, LOW);
         return;
     }
+     */
 
+    digitalWrite(STBY_GEAR, HIGH);
+    motorLeft.drive(pL, FORWARD);
+
+    digitalWrite(STBY_GEAR, HIGH);
+    motorRight.drive(pR, FORWARD);
+
+    /*
     switch (ctrlLeft) {
         case 0xF:  // Forward
             digitalWrite(STBY_GEAR, HIGH);
@@ -174,11 +183,11 @@ void motorDecoder() {
     switch (ctrlRight) {
         case 0xF:  // Forward
             digitalWrite(STBY_GEAR, HIGH);
-            motorRight.drive(pL, FORWARD);
+            motorRight.drive(pR, FORWARD);
             break;
         case 0xB:  // Backward
             digitalWrite(STBY_GEAR, HIGH);
-            motorRight.drive(pL, BACKWARD);
+            motorRight.drive(pR, BACKWARD);
             break;
         case 0x0:
             digitalWrite(STBY_GEAR, LOW);
@@ -188,7 +197,7 @@ void motorDecoder() {
         default:
             timeout++;
             break;
-    }
+    }*/
 
 
     /*

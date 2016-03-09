@@ -28,7 +28,7 @@ bool mvmtController::move(int x, int y) {
 }
 
 uint8_t mvmtController::getPWM(double p) {
-    return (uint8_t) min((maxPWM * p), maxPWM);
+    return (uint8_t) ((maxPWM * p) > maxPWM ? maxPWM : maxPWM * p);
 }
 
 bool mvmtController::arduiCommand(double pL, double pR) {
