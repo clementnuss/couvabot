@@ -35,48 +35,63 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     bool leftForward = pL >= 0;
     bool rightForward = pR >= 0;
 
-    readData = spiCom->CS0_transfer('M');
-    if (readData != 'h') {
-        cerr << "Protocol error!\n";
-        return false;
+    int pwmL = getPWM(pL);
+    int pwmR = getPWM(pR);
+    cout << "pwmL: " << pwmL << " et pwmR: " << pwmR << "\n";
+
+    readData = spiCom->CS0_transfer('H');
+    if (readData != 'h' || true) {
+        cerr << "Protocol handshake error!\n";
+        cerr << "Received: " << readData << "\n";
+//        return false;
     }
-    usleep(100);
+    usleep(1000);
+
+    readData = spiCom->CS0_transfer('M');
+    if (readData != 'a' || true) {
+        cerr << "Protocol error!\n";
+        cerr << "Received: " << readData << "\n";
+//        return false;
+    }
+    usleep(1000);
 
     uint8_t controlByte = 0;
-    if (abs(pL) >= 0.02f)
-        controlByte = (uint8_t) (pL ? (0xF << 4) : (0xB << 4));
-    if (abs(pL) >= 0.02f)
-        controlByte = (uint8_t) (pL ? (0xF) : (0xB));
+    if (pwmL > 1)
+        controlByte = (uint8_t) ((pL >= 0) ? (0xF << 4) : (0xB << 4));
+    if (pwmR > 1)
+        controlByte = (uint8_t) ((pR >= 0) ? (controlByte | 0xF) : (controlByte | 0xB));
+
+    printf("controlByte: 0x%1x \n", controlByte);
 
     readData = spiCom->CS0_transfer(controlByte);
-    if (readData != 'm') {
+    if (readData != 'm' || true) {
         cerr << "Protocol error after having sent controlByte\n";
-        cerr << "Received" << readData << "\n";
-        return false;
+        cerr << "Received: " << readData << "\n";
+//        return false;
     }
-    usleep(100);
+    usleep(1000);
 
-    spiCom->CS0_transfer(getPWM(pL));
-    if (readData != 'o') {
+    readData = spiCom->CS0_transfer(getPWM(pL));
+    if (readData != 'o' || true) {
         cerr << "Protocol error after having sent pL\n";
-        cerr << "Received" << readData << "\n";
-        return false;
+        cerr << "Received: " << readData << "\n";
+//        return false;
     }
-    usleep(100);
+    usleep(1000);
 
-    spiCom->CS0_transfer(getPWM(pR));
-    if (readData != 'k') {
+    readData = spiCom->CS0_transfer(getPWM(pR));
+    if (readData != 'k' || true) {
         cerr << "Protocol error after having sent pR\n";
-        cerr << "Received" << readData << "\n";
-        return false;
+        cerr << "Received: " << readData << "\n";
+//        return false;
     }
-    usleep(100);
+    usleep(1000);
 
-    spiCom->CS0_transfer(getPWM('E'));
-    if (readData != 'o') {
+    readData = spiCom->CS0_transfer('E');
+    if (readData != 'o' || true) {
         cerr << "Protocol error after having sent EOT\n";
-        cerr << "Received" << readData << "\n";
-        return false;
+        cerr << "Received: " << readData << "\n";
+//        return false;
     }
     return true;
 }

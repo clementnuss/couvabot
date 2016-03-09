@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
         switch ((c = waitKey(500))) {
             case KEY_UP:
                 cout << endl << "Up" << endl;//key up
-
+		speed += 0.2f;
                 mvCtrl->arduiCommand(speed, speed);
                 break;
             case KEY_DOWN:
