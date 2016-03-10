@@ -7,7 +7,6 @@
 
 #include "../main.h"
 
-
 class GenericCam {
 public:
     virtual void read(cv::Mat &image) = 0;

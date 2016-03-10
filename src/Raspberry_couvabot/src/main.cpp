@@ -6,9 +6,9 @@
 
 #include <unistd.h>
 #include "main.h"
-#include "src/detectObjects.h"
-#include "src/SPICom.h"
-#include "src/mvmtController.h"
+#include "imageProcessing/detectObjects.h"
+#include "physIface/SPICom.h"
+#include "physIface/mvmtController.h"
 
 int CAMERA_ANGLE = 0;
 GenericCam *cam;

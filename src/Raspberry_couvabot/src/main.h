@@ -5,8 +5,8 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI true
-#define CALIB false
+#define RPI false
+#define CALIB true
 
 
 #if RPI
@@ -33,11 +33,13 @@
 #include <unistd.h>
 
 #include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 
-#include "src/camera.h"
-#include "src/Blob.h"
+#include <opencv2/imgproc/imgproc.hpp>
+#if CALIB
+#include <opencv2/highgui/highgui.hpp>
+#endif
+#include "imageProcessing/camera.h"
+#include "imageProcessing/Blob.h"
 
 
 using namespace cv;

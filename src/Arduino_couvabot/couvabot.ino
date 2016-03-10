@@ -221,3 +221,20 @@ void motorDecoder() {
             */
 }
 
+// SPI interrupt routine
+ISR (SPI_STC_vect)
+{
+    byte c = SPDR;  // grab byte from SPI Data Register
+
+    // add to buffer if room
+    if (pos < sizeof buf)
+    {
+        buf [pos++] = c;
+
+        // example: newline means time to process buffer
+        if (c == '\n')
+            process_it = true;
+
+    }  // end of room available
+}  // end of interrupt routine SPI_STC_vect
+
