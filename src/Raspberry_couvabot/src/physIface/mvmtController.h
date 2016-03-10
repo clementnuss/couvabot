@@ -7,9 +7,13 @@
 
 #include "SPICom.h"
 
-#define VBAT 11.56
-
 namespace mvmtCtrl {
+
+    struct gearsPower{
+        double pL;  // left gear percentage
+        double pR;  // right gear percentage
+    };
+
 
     class mvmtController {
         int     maxPWM;
@@ -22,7 +26,7 @@ namespace mvmtCtrl {
 
         bool move(int x, int y);
 
-        bool arduiCommand(double pL, double pR);
+        bool arduiCommand(gearsPower powers);
 
     private:
 

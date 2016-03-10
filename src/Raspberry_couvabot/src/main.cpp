@@ -6,8 +6,8 @@
 
 #include <unistd.h>
 #include "main.h"
+
 #include "imageProcessing/detectObjects.h"
-#include "physIface/SPICom.h"
 #include "physIface/mvmtController.h"
 
 int CAMERA_ANGLE = 0;
@@ -20,6 +20,7 @@ bool initCam() {
         cam = new RPiCam();
     else
         cam = new WebCam();
+    return true;
 }
 
 
@@ -48,41 +49,53 @@ int main(int argc, char **argv) {
     namedWindow("Speeds", 0);
     createTrackbar("speed", "Speeds", &speedInt, 100, nullptr);
 
+    mvmtCtrl::gearsPower powers;
     while (1) {
 
         switch ((c = waitKey(200))) {
             case KEY_UP:
                 cout << endl << "Up" << endl;//key up
                 speed = std::min(speed + 0.1, 1.0);
-                mvCtrl->arduiCommand(speed, speed);
+                powers.pL=speed;
+                powers.pR=speed;
+                mvCtrl->arduiCommand(powers);
                 break;
             case KEY_DOWN:
                 cout << endl << "Down" << endl;   // key down
                 speed = std::max(speed - 0.1, -1.0);
-
-                mvCtrl->arduiCommand(speed, speed);
+                powers.pL=speed;
+                powers.pR=speed;
+                mvCtrl->arduiCommand(powers);
                 break;
             case KEY_LEFT:
                 if (left) {
-                    mvCtrl->arduiCommand(speed, speed);
+                    powers.pL=speed;
+                    powers.pR=speed;
+                    mvCtrl->arduiCommand(powers);
                     left = false;
                     break;
                 }
                 else {
                     cout << endl << "Left" << endl;  // key left
-                    mvCtrl->arduiCommand(speed - 0.3f, speed);
+                    powers.pL=speed - 0.3f;
+                    powers.pR=speed;
+                    mvCtrl->arduiCommand(powers);
                     left = true;
                     break;
                 }
             case KEY_RIGHT:
                 if (right) {
-                    mvCtrl->arduiCommand(speed, speed);
+                    powers.pL=speed - 0.3f;
+                    powers.pR=speed;
+                    mvCtrl->arduiCommand(powers);
                     right = false;
                     break;
                 }
                 else {
                     cout << endl << "Right" << endl;  // key right
-                    mvCtrl->arduiCommand(speed, speed - 0.3f);
+                    powers.pL=speed;
+                    powers.pR=speed - 0.3f;
+                    mvCtrl->arduiCommand(powers);
                     right = true;
                     break;
                 }

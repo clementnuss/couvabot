@@ -79,4 +79,9 @@ uint8_t SPICom::CS0_transfer(uint8_t send_data) {
 
     return 'D'; //Default dummy data
 }
+
+SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1) {
+    cerr << "Dummy constructor";
+}
+
 #endif

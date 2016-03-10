@@ -2,8 +2,9 @@
 // Created by clement on 04.03.2016.
 //
 
-#include "mvmtController.h"
 #include "../main.h"
+#include "mvmtController.h"
+#include "robotConstants.h"
 
 using namespace mvmtCtrl;
 
@@ -31,10 +32,10 @@ uint8_t mvmtController::getPWM(double p) {
     return (uint8_t) ((maxPWM * p) > maxPWM ? maxPWM : maxPWM * p);
 }
 
-bool mvmtController::arduiCommand(double pL, double pR) {
+bool mvmtController::arduiCommand(gearsPower power) {
 
-    int pwmL = getPWM(abs(pL));
-    int pwmR = getPWM(abs(pR));
+    int pwmL = getPWM(abs(power.pL));
+    int pwmR = getPWM(abs(power.pR));
     cout << "pwmL: " << pwmL << " et pwmR: " << pwmR << "\n";
 
     readData = spiCom->CS0_transfer('H');
@@ -55,9 +56,9 @@ bool mvmtController::arduiCommand(double pL, double pR) {
 
     uint8_t controlByte = 0;
     if (pwmL > 1)
-        controlByte = (uint8_t) ((pL >= 0) ? (0xF << 4) : (0xB << 4));
+        controlByte = (uint8_t) ((power.pL >= 0) ? (0xF << 4) : (0xB << 4));
     if (pwmR > 1)
-        controlByte = (uint8_t) ((pR >= 0) ? (controlByte | 0xF) : (controlByte | 0xB));
+        controlByte = (uint8_t) ((power.pR >= 0) ? (controlByte | 0xF) : (controlByte | 0xB));
 
     printf("controlByte: 0x%1x \n", controlByte);
 
@@ -69,7 +70,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     }
     usleep(1000);
 
-    readData = spiCom->CS0_transfer(getPWM(pL));
+    readData = spiCom->CS0_transfer(getPWM(power.pL));
     if (readData != 'o') {
         cerr << "Protocol error after having sent pL\n";
         cerr << "Received: " << readData << "\n";
@@ -77,7 +78,7 @@ bool mvmtController::arduiCommand(double pL, double pR) {
     }
     usleep(1000);
 
-    readData = spiCom->CS0_transfer(getPWM(pR));
+    readData = spiCom->CS0_transfer(getPWM(power.pR));
     if (readData != 'k') {
         cerr << "Protocol error after having sent pR\n";
         cerr << "Received: " << readData << "\n";

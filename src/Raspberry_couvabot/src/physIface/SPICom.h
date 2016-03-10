@@ -7,10 +7,8 @@
 
 #include <iostream>
 #include <bcm2835.h>
-#include "../main.h"
 
 using namespace std;
-
 
 class SPICom {
 
@@ -18,7 +16,6 @@ class SPICom {
     uint8_t                read_data;
     uint8_t                chipSelect;
     bcm2835SPIClockDivider clockCS0, clockCS1;
-
 
 public:
     SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1);

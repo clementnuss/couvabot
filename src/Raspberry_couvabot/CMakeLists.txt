@@ -17,7 +17,14 @@ link_directories(../RPi/bcm2835-1.49/src)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES src/imageProcessing/camera.cpp src/imageProcessing/detectObjects.cpp src/imageProcessing/Blob.cpp src/physIface/SPICom.cpp src/physIface/mvmtController.cpp src/main.cpp)
+set(SOURCE_FILES
+        src/imageProcessing/camera.cpp
+        src/imageProcessing/detectObjects.cpp
+        src/imageProcessing/Blob.cpp
+        src/navigation/Trajectory.cpp
+        src/physIface/SPICom.cpp
+        src/physIface/mvmtController.cpp
+        src/main.cpp)
 add_executable(main ${SOURCE_FILES})
 
 if(UNIX)
