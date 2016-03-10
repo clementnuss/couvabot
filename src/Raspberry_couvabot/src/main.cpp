@@ -5,10 +5,13 @@
 //
 
 #include <unistd.h>
-#include "main.h"
+#include <time.h>
+#include <sys/time.h>
 
+#include "main.h"
 #include "imageProcessing/detectObjects.h"
 #include "physIface/mvmtController.h"
+#include "physIface/localTime.h"
 
 int CAMERA_ANGLE = 0;
 GenericCam *cam;
@@ -26,6 +29,9 @@ bool initCam() {
 
 int main(int argc, char **argv) {
 
+    initialiseEpoch();
+
+    cout << micros() << endl;
     Mat img, hsv, filtered;
     vector<Blob> redBlobs, greenBlobs;
 
@@ -45,7 +51,13 @@ int main(int argc, char **argv) {
     int c = 0;
     bool left, right;
 
+    for (int i = 0; i < 10000; ++i) {
 
+    }
+    cout << "il faut " << micros() << " us pour compter jusqu'a 10000";
+
+
+#if CALIB
     namedWindow("Speeds", 0);
     createTrackbar("speed", "Speeds", &speedInt, 100, nullptr);
 
@@ -152,6 +164,7 @@ int main(int argc, char **argv) {
 
     }
 
+#endif
 
     if (RPI) {
         bcm2835_spi_end();
@@ -161,6 +174,11 @@ int main(int argc, char **argv) {
 
 
     return 0;
+}
+
+void loop() {
+
+
 }
 
 void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs) {

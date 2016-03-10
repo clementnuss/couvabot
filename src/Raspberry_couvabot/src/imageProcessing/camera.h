@@ -5,6 +5,7 @@
 #ifndef COUVABOT_CAMERA_H
 #define COUVABOT_CAMERA_H
 
+#include <opencv2/highgui/highgui.hpp>
 #include "../main.h"
 
 class GenericCam {

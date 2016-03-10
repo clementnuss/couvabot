@@ -8,6 +8,8 @@
 
 #include <math.h>
 #include "../physIface/robotConstants.h"
+#include "../physIface/localTime.h"
+
 
 //TODO: manage angles greater than -pi/2 , pi/2
 Trajectory::Trajectory(double radius, double tx, double ty) {
@@ -33,12 +35,16 @@ Trajectory::Trajectory(double radius, double tx, double ty) {
 
 gearsPower Trajectory::getWheelsPower(double speed) {
 
+    if (!startTime)
+        start();
+
+
     double pL, pR;
     if (leftRot) {
         pL = radius / (radius + AXLE);
-        pR = 1f;
+        pR = 1;
     } else {
-        pL = 1f;
+        pL = 1;
         pR = radius / (radius + AXLE);
     }
     pL *= speed;
@@ -46,7 +52,15 @@ gearsPower Trajectory::getWheelsPower(double speed) {
     return gearsPower{pL, pR};
 }
 
-double Trajectory::updateAngle() {
+int Trajectory::updateAngle() {
+
+    if ((millis() - time) < 0)
+        return -1;
+
+
+
+
+
     return 0;
 }
 
@@ -56,4 +70,8 @@ double Trajectory::computeAngle(double alpha, double d, double rem, double a) {
     double kappa = asin(rem / a);
 
     return delta - kappa;
+}
+
+void Trajectory::start() {
+    startTime = millis();
 }

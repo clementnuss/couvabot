@@ -22,6 +22,7 @@ set(SOURCE_FILES
         src/imageProcessing/detectObjects.cpp
         src/imageProcessing/Blob.cpp
         src/navigation/Trajectory.cpp
+        src/physIface/localTime.cpp
         src/physIface/SPICom.cpp
         src/physIface/mvmtController.cpp
         src/main.cpp)
@@ -29,6 +30,9 @@ add_executable(main ${SOURCE_FILES})
 
 if(UNIX)
     target_link_libraries(main ${OpenCV_LIBS}  bcm2835)
+    set (CMAKE_CXX_FLAGS  "$(CMAKE_CXX_FLAGS) -mfloat-abi=hard -mfpu=vfp")
+    #Amélioration des performances
+    #https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=115795
 
 elseif(WIN32)
     target_link_libraries(main ${OpenCV_LIBS})
