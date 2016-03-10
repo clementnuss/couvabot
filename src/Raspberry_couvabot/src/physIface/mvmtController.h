@@ -28,6 +28,8 @@ namespace mvmtCtrl {
 
         bool arduiCommand(gearsPower powers);
 
+        static double powerToSpeed(double power);
+
     private:
 
         uint8_t getPWM(double p);

@@ -28,6 +28,11 @@ bool mvmtController::move(int x, int y) {
     return false;
 }
 
+
+double mvmtController::powerToSpeed(double power) {
+    return 1;
+}
+
 uint8_t mvmtController::getPWM(double p) {
     return (uint8_t) ((maxPWM * p) > maxPWM ? maxPWM : maxPWM * p);
 }

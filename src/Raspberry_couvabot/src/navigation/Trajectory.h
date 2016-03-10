@@ -17,6 +17,7 @@ private:
     double rem;       // remaining distance at end of rotation
     bool leftRot;
     double speed;
+    double vR, vL;
     int startTime, time;
 
     double computeAngle(double alpha, double d, double rem, double a);  // Initial theta calculation
