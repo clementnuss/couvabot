@@ -30,7 +30,6 @@ int main(int argc, char **argv) {
 
     initialiseEpoch();
 
-    cout << micros() << endl;
     Mat img, hsv, filtered;
     vector<Blob> redBlobs, greenBlobs;
 
@@ -55,26 +54,29 @@ int main(int argc, char **argv) {
     }
     cout << "il faut " << micros() << " us pour compter jusqu'a 10000\n";
 
-    Trajectory trajectory(5, 13, 8);
+    Trajectory trajectory(0.15, 0.8, 0.3);
 
-    trajectory.getWheelsPower(1);
+    mvCtrl->arduiCommand(trajectory.getWheelsPower(0.25));
 
     while (trajectory.updateAngle() == 0) {
         cout << "Waiting a few us";
-        usleep(500);
+        usleep(50);
     }
-
-    int time = millis();
+	
+	mvCtrl->arduiCommand({0.5,0.5});
 
     int cnt = 0;
 
-    while (cnt <= 10) {
+    while (cnt <= 4) {
         int diff = 0;
+	int time = millis();
         do {
             diff = millis() - time;
-        } while (diff < 1000);
+        } while (diff < 500);
         cout << cnt++ << "\n";
-    }
+    }	
+
+mvCtrl->arduiCommand({0,0});
 
     cout << "Success!\n";
 

@@ -63,27 +63,22 @@ gearsPower Trajectory::getWheelsPower(double speed) {
 
 int Trajectory::updateAngle() {
 
-    cout << "millis " << (int)millis() << " and time : " << time << "and start time " << startTime << "\n";
 
-    int t = 0;
-    while (t!=100000){
-        t++;
-        double a = t * 123123123.023123;
-    }
-
-    cout << "millis " << millis() << " and time : " << time << "\n";
-    if ((millis() - time) < 1)
+    cout << "micros " << micros() << " and time : " << time << "\n";
+    if ((micros() - time) < 1000)
     {
         cout << "nothing to do\n";
         return 0;
     }
 
 
-    double deltaT = millis() - time; // Delta t since last update
-    double deltaTheta = ((vL - vR) / AXLE) * deltaT;
+    double deltaT = micros() - time; // Delta t since last update
+    double deltaTheta = ((vL - vR) / AXLE) * (deltaT * 0.000001);
+
+cout << "Delta T : " << deltaT << "\n";
 
     theta -= deltaTheta;
-    time = millis();
+    time = micros();
 
     cout << "Theta modified \n";
     it++;
@@ -105,6 +100,6 @@ double Trajectory::computeAngle(double alpha, double d, double rem, double a) {
 }
 
 void Trajectory::start() {
-    startTime = millis();
+    startTime = micros();
     time = startTime;
 }
