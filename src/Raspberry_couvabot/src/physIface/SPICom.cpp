@@ -75,8 +75,10 @@ uint8_t SPICom::CS1_transfer(uint8_t send_data) {
 #endif
 
 #if !RPI
+
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
 
+    cout << "Data to send " << (char) send_data << "[char] or " << send_data << " [hex]\n";
     return 'D'; //Default dummy data
 }
 

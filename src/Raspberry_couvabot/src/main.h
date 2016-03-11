@@ -5,7 +5,7 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI true
+#define RPI false
 #define CALIB false
 
 

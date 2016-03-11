@@ -43,40 +43,30 @@ int main(int argc, char **argv) {
     }
 
     mvCtrl = new mvmtCtrl::mvmtController();
+    mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
 
     int speedInt = 100;
     double speed = 1.0;
     int c = 0;
     bool left, right;
 
-    for (int i = 0; i < 10000; ++i) {
-        c++;
-    }
-    cout << "il faut " << micros() << " us pour compter jusqu'a 10000\n";
 
-    Trajectory trajectory(0.15, 0.8, 0.3);
+    Trajectory trajectory = Trajectory();
+    trajectory.setParams(0.15, 0.8, 0.3);
 
-    mvCtrl->arduiCommand(trajectory.getWheelsPower(0.25));
-
-    while (trajectory.updateAngle() == 0) {
-        cout << "Waiting a few us";
+    while (trajectory.update() == 0) {
         usleep(50);
     }
-	
-	mvCtrl->arduiCommand({0.5,0.5});
 
-    int cnt = 0;
+    mvCtrl->arduiCommand(trajectory.getWheelsPower());
 
-    while (cnt <= 4) {
-        int diff = 0;
-	int time = millis();
-        do {
-            diff = millis() - time;
-        } while (diff < 500);
-        cout << cnt++ << "\n";
-    }	
+    while (trajectory.update() == 0) {
+        usleep(50);
+    }
 
-mvCtrl->arduiCommand({0,0});
+    cout << "end of traj" << "\n";
+
+    mvCtrl->arduiCommand({0, 0});
 
     cout << "Success!\n";
 
