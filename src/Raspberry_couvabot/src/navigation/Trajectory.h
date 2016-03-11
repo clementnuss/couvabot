@@ -15,7 +15,7 @@ private:
     double tx, ty;  // target x/y position
     double theta;   // angle of rotation
     double rem;     // remaining distance at end of rotation
-    double speed, differentialRatio, speedRatio;
+    double speedPer, differentialRatio, speedRatio;
     bool leftRot;   // when make a turn to the left, we need to swap the coordinates
     bool straight, trajectoryEnded;  // true when the rotation is ended
     double vR, vL;
@@ -27,7 +27,7 @@ public:
 
     Trajectory();
 
-    gearsPower getWheelsPower(double spd);
+    gearsPower setWheelsPower(double spd);
 
     gearsPower getWheelsPower();
 

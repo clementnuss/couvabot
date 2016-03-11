@@ -25,12 +25,12 @@ Trajectory::Trajectory() {
 }
 
 /*
- *  Function that computes the wheels power, given a speed in {0,1}
+ *  Function that computes the wheels power, given a speedPer in {0,1}
  */
-gearsPower Trajectory::getWheelsPower(double spd) {
+gearsPower Trajectory::setWheelsPower(double spd) {
 
     if (straight) {
-        this->speed = spd;
+        this->speedPer = spd;
         return gearsPower{spd, spd};
     }
 
@@ -47,7 +47,7 @@ gearsPower Trajectory::getWheelsPower(double spd) {
     }
     pL *= spd;
     pR *= spd;
-    speed = spd;
+    speedPer = spd;
 
     //TODO: insert calibration value!
     vL = mvmtController::powerToSpeed(pL);
@@ -60,7 +60,7 @@ gearsPower Trajectory::getWheelsPower(double spd) {
 
 gearsPower Trajectory::getWheelsPower() {
     if (straight)
-        return {speed, speed};
+        return {speedPer, speedPer};
 
     double pL, pR;
     if (leftRot) {
@@ -70,8 +70,8 @@ gearsPower Trajectory::getWheelsPower() {
         pL = 1;
         pR = differentialRatio;
     }
-    pL *= speed;
-    pR *= speed;
+    pL *= speedPer;
+    pR *= speedPer;
 
     return {pL, pR};
 }
@@ -92,7 +92,7 @@ int Trajectory::update() {
             return 0;
 
         double deltaT = (micros() - time) * 0.000001; // Delta t since last update [us]
-        double deltaD = deltaT * speed;
+        double deltaD = deltaT * mvmtController::powerToSpeed(speedPer);
 
         rem -= deltaD;
         time = micros();
@@ -161,6 +161,8 @@ void Trajectory::setParams(double radius, double tx, double ty) {
     this->tx = tx;
     this->ty = ty;
     it = 0;
+
+    trajectoryEnded = false;
 
     double alpha = M_PI_2 - atan2(tx, ty);
     double d = sqrt(pow(tx, 2) + pow(ty, 2));

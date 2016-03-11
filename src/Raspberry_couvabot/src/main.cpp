@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
 
     Trajectory trajectory = Trajectory();
     trajectory.setParams(0.15, 0.8, 0.3);
+    trajectory.setWheelsPower(0.8);
 
     while (trajectory.update() == 0) {
         usleep(50);
@@ -73,7 +74,7 @@ int main(int argc, char **argv) {
 
 #if CALIB
     namedWindow("Speeds", 0);
-    createTrackbar("speed", "Speeds", &speedInt, 100, nullptr);
+    createTrackbar("speedPer", "Speeds", &speedInt, 100, nullptr);
 
     mvmtCtrl::gearsPower powers;
     while (1) {
@@ -81,46 +82,46 @@ int main(int argc, char **argv) {
         switch ((c = waitKey(200))) {
             case KEY_UP:
                 cout << endl << "Up" << endl;//key up
-                speed = std::min(speed + 0.1, 1.0);
-                powers.pL=speed;
-                powers.pR=speed;
+                speedPer = std::min(speedPer + 0.1, 1.0);
+                powers.pL=speedPer;
+                powers.pR=speedPer;
                 mvCtrl->arduiCommand(powers);
                 break;
             case KEY_DOWN:
                 cout << endl << "Down" << endl;   // key down
-                speed = std::max(speed - 0.1, -1.0);
-                powers.pL=speed;
-                powers.pR=speed;
+                speedPer = std::max(speedPer - 0.1, -1.0);
+                powers.pL=speedPer;
+                powers.pR=speedPer;
                 mvCtrl->arduiCommand(powers);
                 break;
             case KEY_LEFT:
                 if (left) {
-                    powers.pL=speed;
-                    powers.pR=speed;
+                    powers.pL=speedPer;
+                    powers.pR=speedPer;
                     mvCtrl->arduiCommand(powers);
                     left = false;
                     break;
                 }
                 else {
                     cout << endl << "Left" << endl;  // key left
-                    powers.pL=speed - 0.3f;
-                    powers.pR=speed;
+                    powers.pL=speedPer - 0.3f;
+                    powers.pR=speedPer;
                     mvCtrl->arduiCommand(powers);
                     left = true;
                     break;
                 }
             case KEY_RIGHT:
                 if (right) {
-                    powers.pL=speed - 0.3f;
-                    powers.pR=speed;
+                    powers.pL=speedPer - 0.3f;
+                    powers.pR=speedPer;
                     mvCtrl->arduiCommand(powers);
                     right = false;
                     break;
                 }
                 else {
                     cout << endl << "Right" << endl;  // key right
-                    powers.pL=speed;
-                    powers.pR=speed - 0.3f;
+                    powers.pL=speedPer;
+                    powers.pR=speedPer - 0.3f;
                     mvCtrl->arduiCommand(powers);
                     right = true;
                     break;
@@ -130,7 +131,7 @@ int main(int argc, char **argv) {
                 break;
         }
 
-        speedInt = (int) (speed * 100);
+        speedInt = (int) (speedPer * 100);
 
         usleep(100000);
     }
