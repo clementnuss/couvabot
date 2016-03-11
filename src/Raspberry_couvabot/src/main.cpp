@@ -5,13 +5,12 @@
 //
 
 #include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
 
 #include "main.h"
 #include "imageProcessing/detectObjects.h"
 #include "physIface/mvmtController.h"
 #include "physIface/localTime.h"
+#include "navigation/Trajectory.h"
 
 int CAMERA_ANGLE = 0;
 GenericCam *cam;
@@ -52,9 +51,32 @@ int main(int argc, char **argv) {
     bool left, right;
 
     for (int i = 0; i < 10000; ++i) {
-
+        c++;
     }
-    cout << "il faut " << micros() << " us pour compter jusqu'a 10000";
+    cout << "il faut " << micros() << " us pour compter jusqu'a 10000\n";
+
+    Trajectory trajectory(5, 13, 8);
+
+    trajectory.getWheelsPower(1);
+
+    while (trajectory.updateAngle() == 0) {
+        cout << "Waiting a few us";
+        usleep(500);
+    }
+
+    int time = millis();
+
+    int cnt = 0;
+
+    while (cnt <= 10) {
+        int diff = 0;
+        do {
+            diff = millis() - time;
+        } while (diff < 1000);
+        cout << cnt++ << "\n";
+    }
+
+    cout << "Success!\n";
 
 
 #if CALIB
@@ -168,7 +190,9 @@ int main(int argc, char **argv) {
 
     if (RPI) {
         bcm2835_spi_end();
+
         bcm2835_close();
+
     }
     cout << "End of program!";
 

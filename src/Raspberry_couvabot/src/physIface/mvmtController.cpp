@@ -30,7 +30,7 @@ bool mvmtController::move(int x, int y) {
 
 
 double mvmtController::powerToSpeed(double power) {
-    return 1;
+    return WHEEL_SPEED * power;
 }
 
 uint8_t mvmtController::getPWM(double p) {
