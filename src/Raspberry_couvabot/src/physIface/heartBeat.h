@@ -8,20 +8,26 @@
 
 #include "SPICom.h"
 
-class heartBeat {
+struct arduinoData{
+
+};
+
+class HeartBeat {
 
 private:
     SPICom *spiCom;
     uint8_t readData;
+    unsigned int time;
 
 public:
 
-    getData();
+    arduinoData getData();
 
-    heartBeat(SPICom *spiCom);
+    HeartBeat(SPICom *spiCom);
 
     int pingArduino();
 
+    int start();
 };
 
 

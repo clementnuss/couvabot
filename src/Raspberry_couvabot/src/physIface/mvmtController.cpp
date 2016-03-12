@@ -13,7 +13,6 @@ mvmtController::mvmtController(SPICom *spiCom) {
     maxPWM = (int) ((7 * 255) / VBAT);
 
     this->spiCom = spiCom;
-
 }
 
 bool mvmtController::move(int x, int y) {
@@ -42,7 +41,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer('M');
     if (readData != 'a') {
@@ -50,7 +48,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     uint8_t controlByte = 0;
     if (pwmL > 1)
@@ -66,7 +63,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer(getPWM(power.pL));
     if (readData != 'o') {
@@ -74,7 +70,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer(getPWM(power.pR));
     if (readData != 'k') {
@@ -82,7 +77,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer('E');
     if (readData != 'o') {
@@ -90,6 +84,7 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
+
     return true;
 }
 

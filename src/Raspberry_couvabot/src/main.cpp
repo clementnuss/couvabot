@@ -10,6 +10,7 @@
 #include "imageProcessing/detectObjects.h"
 #include "physIface/mvmtController.h"
 #include "physIface/localTime.h"
+#include "physIface/HeartBeat.h"
 #include "navigation/Trajectory.h"
 
 int CAMERA_ANGLE = 0;
@@ -18,6 +19,9 @@ HSVbounds hsvBoundsGreen, hsvBoundsRed;
 mvmtCtrl::mvmtController *mvCtrl;
 Trajectory trajectory;
 SPICom *spiCom;
+HeartBeat *heartBeat;
+
+unsigned startTime = millis();
 
 bool initCam() {
     if (RPI)
@@ -55,6 +59,16 @@ int main(int argc, char **argv) {
 
     mvCtrl = new mvmtCtrl::mvmtController(spiCom);
     mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
+
+    heartBeat = new HeartBeat(spiCom);
+
+    while (heartBeat->start() != 0){
+
+
+    }
+
+    startTime = millis();
+
 
     int speedInt = 100;
     double speed = 1.0;

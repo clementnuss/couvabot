@@ -4,6 +4,8 @@
 
 #include <unistd.h>
 #include "SPICom.h"
+#include "../main.h"
+#include "localTime.h"
 
 bool bcm2835Initialized = false;
 
@@ -50,9 +52,15 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
         }
     }
 
+    time = micros();
 }
 
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
+    if ((micros() - time) < 10) // Check that we haven't send anything for 10 us
+        usleep((micros() - time));
+
+    time = micros();
+
     if (chipSelect != BCM2835_SPI_CS0) {
         bcm2835_spi_setClockDivider(clockCS0);
         bcm2835_spi_chipSelect(BCM2835_SPI_CS0);

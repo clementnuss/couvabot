@@ -13,10 +13,9 @@ using namespace std;
 class SPICom {
 
     uint8_t                send_data;
-    uint8_t                read_data;
     uint8_t                chipSelect;
     bcm2835SPIClockDivider clockCS0, clockCS1;
-
+    unsigned  int time;
 public:
     SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1);
 

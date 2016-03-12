@@ -3,9 +3,20 @@
 //
 
 #include <unistd.h>
-#include "heartBeat.h"
+#include "HeartBeat.h"
+#include "localTime.h"
 
-int heartBeat::pingArduino() {
+HeartBeat::HeartBeat(SPICom *spiCom) {
+
+    this->spiCom = spiCom;
+}
+
+int HeartBeat::pingArduino() {
+
+    if ((millis() - time) < 200)    // Ping the arduino every 200 ms.
+        return 0;
+    else
+        time = millis();
 
     readData = spiCom->CS0_transfer('H');
     switch (readData) {
@@ -14,7 +25,7 @@ int heartBeat::pingArduino() {
         case 'd':
             break;
         default:
-            cout << "heartBeat when Arduino not ready\n";
+            cout << "HeartBeat when Arduino not ready\n";
     }
 
     readData = spiCom->CS0_transfer('M');
@@ -28,7 +39,33 @@ int heartBeat::pingArduino() {
     return 1;
 }
 
-heartBeat::heartBeat(SPICom *spiCom) {
+arduinoData HeartBeat::getData() {
+    return arduinoData();
+}
 
-    this->spiCom = spiCom;
+
+int HeartBeat::start() {
+
+    if ((millis() - time) < 10)    // Check the arduino every 10 ms in start mode.
+        return 0;
+    else
+        time = millis();
+
+    readData = spiCom->CS0_transfer('H');
+    switch (readData) {
+        case 'h':
+            return 0;
+        case 'd':
+            break;
+        default:
+            cout << "HeartBeat when Arduino not ready\n";
+    }
+
+    readData = spiCom->CS0_transfer('D'); // Acknowledge data transmit mode
+    if (readData == 's')    // if there is an 's', we start !
+        return 1;
+
+    readData = spiCom->CS0_transfer('E'); // End transmission
+
+    return 0;
 }

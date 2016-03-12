@@ -33,7 +33,7 @@ void initialiseEpoch(void) {
  *********************************************************************************
  */
 
-unsigned int millis (void)
+unsigned int millis()
 {
     struct timeval tv ;
     uint64_t now ;
@@ -51,7 +51,7 @@ unsigned int millis (void)
  *********************************************************************************
  */
 
-unsigned int micros (void)
+unsigned int micros()
 {
     struct timeval tv ;
     uint64_t now ;

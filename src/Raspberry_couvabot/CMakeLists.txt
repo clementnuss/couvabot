@@ -25,7 +25,7 @@ set(SOURCE_FILES
         src/physIface/localTime.cpp
         src/physIface/SPICom.cpp
         src/physIface/mvmtController.cpp
-        src/physIface/heartBeat.cpp
+        src/physIface/HeartBeat.cpp
         src/main.cpp)
 add_executable(main ${SOURCE_FILES})
 
