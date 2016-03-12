@@ -18,11 +18,11 @@ namespace mvmtCtrl {
     class mvmtController {
         int     maxPWM;
         SPICom  *spiCom;
-        uint8_t readData, sendData;
+        uint8_t readData;
 
     public:
 
-        mvmtController();
+        mvmtController(SPICom *spiCom);
 
         bool move(int x, int y);
 

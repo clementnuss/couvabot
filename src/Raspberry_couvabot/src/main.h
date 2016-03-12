@@ -5,7 +5,7 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI false
+#define RPI true
 #define CALIB false
 
 
@@ -51,7 +51,9 @@ void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &gre
 
 int main(int argc, char **argv);
 
-void loop();
+int loop();
+
+int checkTime();
 
 struct HSVbounds {
     int hMin = 0, sMin = 0, vMin = 0,

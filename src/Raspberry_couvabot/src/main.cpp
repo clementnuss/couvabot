@@ -16,6 +16,8 @@ int CAMERA_ANGLE = 0;
 GenericCam *cam;
 HSVbounds hsvBoundsGreen, hsvBoundsRed;
 mvmtCtrl::mvmtController *mvCtrl;
+Trajectory trajectory;
+SPICom *spiCom;
 
 bool initCam() {
     if (RPI)
@@ -42,7 +44,16 @@ int main(int argc, char **argv) {
         createTrackbars(hsvBoundsRed, "Red Trackbars");
     }
 
-    mvCtrl = new mvmtCtrl::mvmtController();
+    if (RPI) {
+        try {
+            //first clock divider for Arduino
+            spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
+        } catch (string exception) {
+            cerr << "Caught exception : " << exception;
+        }
+    }
+
+    mvCtrl = new mvmtCtrl::mvmtController(spiCom);
     mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
 
     int speedInt = 100;
@@ -51,7 +62,7 @@ int main(int argc, char **argv) {
     bool left, right;
 
 
-    Trajectory trajectory = Trajectory();
+    trajectory = Trajectory();
     trajectory.setParams(0.15, 0.8, 0.3);
     trajectory.setWheelsPower(0.8);
 
@@ -193,9 +204,17 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void loop() {
+int loop() {
+
+    if (trajectory.update()) {
+        mvCtrl->arduiCommand(trajectory.getWheelsPower());
+    }
 
 
+}
+
+int checkTime() {
+    return (millis() > 105000);
 }
 
 void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs) {

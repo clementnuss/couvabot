@@ -8,22 +8,15 @@
 
 using namespace mvmtCtrl;
 
-mvmtController::mvmtController() {
+mvmtController::mvmtController(SPICom *spiCom) {
 
     maxPWM = (int) ((7 * 255) / VBAT);
 
-    if (RPI) {
-        try {
-            //first clock divider for Arduino
-            spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
-        } catch (string exception) {
-            cerr << "Caught exception : " << exception;
-        }
-    }
+    this->spiCom = spiCom;
+
 }
 
 bool mvmtController::move(int x, int y) {
-
 
     return false;
 }
