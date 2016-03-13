@@ -5,7 +5,7 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI true
+#define RPI false
 #define CALIB false
 
 
@@ -47,13 +47,14 @@ using namespace std;
 
 bool initCam();
 
-void capBlobs(Mat &hsv, Mat &filtered, vector<Blob> &redBlobs, vector<Blob> &greenBlobs);
+void *capBlobs();
+
+void *capImage();
 
 int main(int argc, char **argv);
 
 int loop();
 
-int checkTime();
 
 struct HSVbounds {
     int hMin = 0, sMin = 0, vMin = 0,

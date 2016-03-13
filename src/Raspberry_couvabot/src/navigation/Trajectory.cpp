@@ -98,7 +98,10 @@ int Trajectory::update() {
         time = micros();
         it++;
 
-        if (rem <= 0.05) {
+        if (rem < 0.3) {
+            speedPer = speedPer * (rem/0.3);
+            return 1;
+        } else if (rem <= 0.05) {
             trajectoryEnded = true;
             cout << "End of trajectory at time " << millis() << ", after " << it << " iterations\n";
             return 1;

@@ -8,16 +8,9 @@
 
 using namespace mvmtCtrl;
 
-mvmtController::mvmtController(SPICom *spiCom) {
-
-    maxPWM = (int) ((7 * 255) / VBAT);
-
+mvmtController::mvmtController(SPICom *spiCom, double vBat) {
+    maxPWM = (int) ((7 * 255) / vBat);
     this->spiCom = spiCom;
-}
-
-bool mvmtController::move(int x, int y) {
-
-    return false;
 }
 
 
@@ -54,8 +47,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         controlByte = (uint8_t) ((power.pL >= 0) ? (0xF << 4) : (0xB << 4));
     if (pwmR > 1)
         controlByte = (uint8_t) ((power.pR >= 0) ? (controlByte | 0xF) : (controlByte | 0xB));
-
-    printf("controlByte: 0x%1x \n", controlByte);
 
     readData = spiCom->CS0_transfer(controlByte);
     if (readData != 'm') {

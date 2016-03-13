@@ -22,9 +22,7 @@ namespace mvmtCtrl {
 
     public:
 
-        mvmtController(SPICom *spiCom);
-
-        bool move(int x, int y);
+        mvmtController(SPICom *spiCom, double vBat);
 
         bool arduiCommand(gearsPower powers);
 

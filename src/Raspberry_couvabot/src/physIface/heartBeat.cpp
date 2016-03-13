@@ -58,7 +58,7 @@ int HeartBeat::start() {
         case 'd':
             break;
         default:
-            cout << "HeartBeat when Arduino not ready\n";
+            cout << "HeartBeat when Arduino is not ready\n";
     }
 
     readData = spiCom->CS0_transfer('D'); // Acknowledge data transmit mode
