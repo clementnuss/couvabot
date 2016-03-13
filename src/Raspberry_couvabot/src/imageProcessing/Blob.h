@@ -18,8 +18,6 @@ public:
 
     Blob(int posX, int posY, int area, int colour);
 
-    bool operator<(const Blob &b1, const Blob &b2);
-
     int getPosX() const;
 
     int getPosY() const;
@@ -30,5 +28,7 @@ public:
 
     double getDistance() const;
 };
+
+bool compBlobs(const Blob &b1, const Blob &b2);
 
 #endif //OPENCV_BLOB_H

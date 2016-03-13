@@ -4,12 +4,32 @@
 
 #include "camera.h"
 
+#if RPI
+
+#endif
+
+
 RPiCam::RPiCam() {
+
+    //Open camera
+    cout << "Opening Camera...\n";
+    if (!Camera.open()) {
+        cerr << "Error opening camera\n";
+    }
+
+    cout << "Sleeping for 500 [ms]\n";
+    usleep(500000);
+
+    // Set properties
+    Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
+
     std::cout << "RPi camera initialized";
+
 }
 
 void RPiCam::read(cv::Mat &image) {
-    //TODO: raspicam
+    Camera.grab();
+    Camera.retrieve(image);
 }
 
 WebCam::WebCam() {
@@ -18,7 +38,7 @@ WebCam::WebCam() {
 
     if (!cap.isOpened())  // if not success, exit program
     {
-        cerr << "Cannot open the web cam" << endl;
+        cerr << "Cannot open the web cam\n";
     }
 
     cap.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);

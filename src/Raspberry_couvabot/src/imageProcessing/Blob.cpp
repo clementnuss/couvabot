@@ -35,6 +35,6 @@ double Blob::getDistance() const {
     return d;
 }
 
-bool Blob::operator<(const Blob &b1, const Blob &b2) {
-    return b1.d < b2.d;
+bool compBlobs(const Blob &b1, const Blob &b2) {
+    return b1.getDistance() > b2.getDistance();
 }

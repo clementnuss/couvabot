@@ -26,16 +26,7 @@ vector<Blob> redBlobs, greenBlobs;
 
 bool imgReady = false, blobsReady = false;
 
-unsigned startTime = millis();
-
-bool initCam() {
-    if (RPI)
-        cam = new RPiCam();
-    else
-        cam = new WebCam();
-    return true;
-}
-
+unsigned startTime;
 
 int main(int argc, char **argv) {
 
@@ -47,11 +38,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-
-    initialiseEpoch();
-
-    if (!initCam())
+    if (!initCam()){
         cerr << "Camera initialization error !!!";
+        return 1;
+    }
+
 
     if (CALIB) {
         createTrackbars(hsvBoundsGreen, "Green Trackbars");
@@ -60,22 +51,26 @@ int main(int argc, char **argv) {
 
     if (RPI) {
         try {
-            //first clock divider for Arduino
+            //first clock divider for Arduino, second for 2nd SPI peripheral
             spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
         } catch (string exception) {
             cerr << "Caught exception : " << exception;
         }
     }
 
+    initialiseEpoch();
+
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
     mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
 
     heartBeat = new HeartBeat(spiCom);
 
-    while (heartBeat->start() != 0) {
+    /*
+     while (heartBeat->start() != 0) {
 
 
     }
+    */
 
     startTime = millis();
 
@@ -93,7 +88,19 @@ int main(int argc, char **argv) {
 
     cout << "End of program! after " << millis() - startTime << " [ms].";
 
+    while(1){
 
+        usleep(50000);
+
+        capImage();
+
+        //show frames
+        if (CALIB) {
+            imshow("camera", img);
+            imshow("HSV image", hsv);
+        }
+
+    }
 
 
     /*if (redBlobs.size() != 0) {
@@ -112,20 +119,9 @@ int main(int argc, char **argv) {
         }
     }*/
 
-    sort(redBlobs.begin(), redBlobs.end());
-    sort(greenBlobs.begin(), greenBlobs.end());
+    sort(redBlobs.begin(), redBlobs.end(), compBlobs);
+    sort(greenBlobs.begin(), greenBlobs.end(), compBlobs);
 
-    if (redBlobs.size() >= greenBlobs.size()) {
-
-
-    }
-
-
-    //show frames
-    if (CALIB) {
-        imshow("camera", img);
-        imshow("HSV image", hsv);
-    }
 
     if (RPI) {
         bcm2835_spi_end();
@@ -181,4 +177,12 @@ void *capImage() {
 
     pthread_exit(NULL);
     return nullptr;
+}
+
+bool initCam() {
+    if (RPI)
+        cam = new RPiCam();
+    else
+        cam = new WebCam();
+    return true;
 }
