@@ -11,6 +11,9 @@
 
 #if RPI
 //include Raspberry things (Raspicam library)
+#define FRAME_WIDTH 320
+#define FRAME_HEIGHT 240
+
 #define KEY_UP 65362
 #define KEY_DOWN 65364
 #define KEY_LEFT 65361
@@ -47,14 +50,15 @@ using namespace std;
 
 bool initCam();
 
-void *capBlobs();
+void capBlobs();
 
-void *capImage();
+void capImage();
 
 int main(int argc, char **argv);
 
 int loop();
 
+void * imgProc(void *threadArgs);
 
 struct HSVbounds {
     int hMin = 0, sMin = 0, vMin = 0,

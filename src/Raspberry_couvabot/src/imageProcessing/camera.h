@@ -31,7 +31,7 @@ public:
  */
 
 class RPiCam : public GenericCam {
-    raspicam::RaspiCam_Cv Camera;
+    raspicam::RaspiCam_Cv camera;
 
 public:
     RPiCam();

@@ -11,25 +11,26 @@
 
 RPiCam::RPiCam() {
 
+    // Set properties
+    camera.set(CV_CAP_PROP_FORMAT, CV_8UC3);
+    camera.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
+    camera.set(CV_CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT);
+    camera.set(CV_CAP_PROP_EXPOSURE, 100);
+
     //Open camera
-    cout << "Opening Camera...\n";
-    if (!Camera.open()) {
+    cout << "Opening camera...\n";
+    if (!camera.open()) {
         cerr << "Error opening camera\n";
     }
 
-    cout << "Sleeping for 500 [ms]\n";
-    usleep(500000);
-
-    // Set properties
-    Camera.set(CV_CAP_PROP_FORMAT, CV_8UC1);
-
-    std::cout << "RPi camera initialized";
+    std::cout << "RPi camera initialized\n";
 
 }
 
+
 void RPiCam::read(cv::Mat &image) {
-    Camera.grab();
-    Camera.retrieve(image);
+    camera.grab();
+    camera.retrieve(image);
 }
 
 WebCam::WebCam() {
@@ -51,5 +52,5 @@ void WebCam::read(cv::Mat &image) {
 }
 
 void GenericCam::read(cv::Mat &image) {
-
+    cerr << "WARNING! Using dummy camera!!\n";
 }

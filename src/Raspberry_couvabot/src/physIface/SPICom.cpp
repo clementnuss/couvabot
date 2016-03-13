@@ -22,13 +22,11 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     this->chipSelect = BCM2835_SPI_CS0;
 
     if (!bcm2835_init())
-        cerr << "Big error during initialization of bcm2835 library!!";
+        cerr << "Error during initialization of bcm2835 library!!";
 
 
     if (!bcm2835Initialized)
         bcm2835_spi_begin();
-
-    cout << "Alive" << endl;
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);
@@ -37,10 +35,10 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, LOW);
 
-
+    cout << "Sending something\n";
     uint8_t readData = CS0_transfer('H'); //Send RPi heartbeat char 'H'
     if (readData != 'h') {
-        cerr << "Arduino doesnt have 'h' in SPDR .. waiting 3ms" << "\n";
+        cout << "Arduino doesnt have 'h' in SPDR .. waiting 3ms" << "\n";
         cerr << "instead it has: " << readData << "\n";
         usleep(3000); // Wait 3ms if no comm with Arduino
 
@@ -51,6 +49,8 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
             throw "SPI initializazion error";
         }
     }
+
+    cout << "Arduino communication initialized\n";
 
     time = micros();
 }
