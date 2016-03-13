@@ -62,7 +62,7 @@ void createTrackbars(HSVbounds &bounds, string winName) {
     createTrackbar("max_V", winName, &bounds.vMax, bounds.vMax, nullptr);
 }
 
-bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, Rect &board) {
+bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, RotatedRect &board) {
 
     vector<vector<Point>> contours; //Stores the contours as a succession of Points
     contours.reserve(5);
@@ -74,7 +74,7 @@ bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, Rect &board) {
     int biggest = -1;
     int area = -1;
 
-    if (contours.size() > 0 && contours.size() < 5) {
+    if (contours.size() > 0 && contours.size() < 40) {
         for (int i = 0; i < contours.size(); ++i) {
 
             int moments[3];
@@ -84,11 +84,10 @@ bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, Rect &board) {
                 biggest = i;
             }
         }
-        vector<vector<Point>> contour_poly;
-        approxPolyDP( contours[biggest], contour_poly, 5, true);
-        cout <<"coucou \n";
 
-        board = boundingRect(Mat(contour_poly));
+        board = minAreaRect(contours[biggest]);
+
+
         return true;
 
     } else {
@@ -107,8 +106,8 @@ void imgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered) {
             Scalar(hsvBounds.hMax, hsvBounds.sMax, hsvBounds.vMax),
             filtered);
 
-    Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(3, 3));
-    Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(6, 6));
+    Mat erodeElement = getStructuringElement(MORPH_RECT, Size(3, 3));
+    Mat dilateElement = getStructuringElement(MORPH_RECT, Size(6, 6));
 
     erode(filtered, filtered, erodeElement);
     erode(filtered, filtered, erodeElement);

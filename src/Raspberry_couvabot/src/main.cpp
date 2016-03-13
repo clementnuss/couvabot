@@ -49,12 +49,6 @@ int main(int argc, char **argv) {
     }
 
 
-    if (CALIB) {
-        createTrackbars(hsvBoundsGreen, "Green Trackbars");
-        createTrackbars(hsvBoundsRed, "Red Trackbars");
-        createTrackbars(whiteBoardBounds, "WhiteBoard bounds");
-    }
-
     if (!RPI) {
         try {
             //first clock divider for Arduino, second for 2nd SPI peripheral
@@ -128,34 +122,45 @@ int loop() {
 
 void *imgProc(void *threadArgs) {
 
+    if (CALIB) {
+        //createTrackbars(hsvBoundsGreen, "Green Trackbars");
+        //createTrackbars(hsvBoundsRed, "Red Trackbars");
+        createTrackbars(whiteBoardBounds, "WhiteBoard bounds");
+    }
+
     while (1) {
 
         capImage();
 
         Mat whiteBoardFiltered;
         imgProcess(whiteBoardBounds, hsv, whiteBoardFiltered);
-        Rect board;
+        imshow("whiteBoard filtered", whiteBoardFiltered);
+        RotatedRect board;
         filterBoard(whiteBoardBounds, whiteBoardFiltered, board);
 
-        Scalar color = Scalar(120, 120, 0);
-        rectangle(img, board.tl(), board.br(),color, 2, 8, 0);
+        Scalar color = Scalar(155, 165, 23);
+
+        Point2f rect_points[4];
+        board.points(rect_points);
+        for (int j = 0; j < 4; j++)
+            line(img, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
 
         blobsReady = false;
 
-        capBlobs();
+        //capBlobs();
 
         if (CALIB) {
             imshow("camera", img);
             imshow("HSV image", hsv);
         }
 //
-        sort(redBlobs.begin(), redBlobs.end(), compBlobs);
-        sort(greenBlobs.begin(), greenBlobs.end(), compBlobs);
+        //sort(redBlobs.begin(), redBlobs.end(), compBlobs);
+        //sort(greenBlobs.begin(), greenBlobs.end(), compBlobs);
 
         blobsReady = true;
         n++;
 
-        waitKey(30);
+        waitKey(300);
     }
 
 
@@ -187,13 +192,13 @@ void capBlobs() {
     imgProcess(hsvBoundsRed, hsv, filtered);
     detectObjects(redBlobs, filtered, RED);
     //if (CALIB)
-        imshow("Red filtered", filtered);
+    imshow("Red filtered", filtered);
 
 
     imgProcess(hsvBoundsGreen, hsv, filtered);
     detectObjects(greenBlobs, filtered, GREEN);
     //if (CALIB)
-        imshow("Green filtered", filtered);
+    imshow("Green filtered", filtered);
 
     blobsReady = true;
 }

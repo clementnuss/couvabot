@@ -10,7 +10,7 @@
 
 
 RPiCam::RPiCam() {
-
+#if RPI
     // Set properties
     camera.set(CV_CAP_PROP_FORMAT, CV_8UC3);
     camera.set(CV_CAP_PROP_FRAME_WIDTH, FRAME_WIDTH);
@@ -24,13 +24,17 @@ RPiCam::RPiCam() {
     }
 
     std::cout << "RPi camera initialized\n";
-
+#endif
 }
 
 
 void RPiCam::read(cv::Mat &image) {
+#if RPI
+
     camera.grab();
     camera.retrieve(image);
+
+#endif
 }
 
 WebCam::WebCam() {

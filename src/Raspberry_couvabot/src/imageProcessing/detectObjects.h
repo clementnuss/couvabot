@@ -20,6 +20,6 @@ void imgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered);
 
 void momentsOfOrder1( const cv::Mat& img, int* moments);
 
-bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, Rect &board);
+bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, RotatedRect &board);
 
 #endif //COUVABOT_OBJDETECT_H

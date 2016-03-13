@@ -31,8 +31,9 @@ public:
  */
 
 class RPiCam : public GenericCam {
+#if RPI
     raspicam::RaspiCam_Cv camera;
-
+#endif
 public:
     RPiCam();
     void read(cv::Mat &image);
