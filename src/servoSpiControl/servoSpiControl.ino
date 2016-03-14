@@ -121,20 +121,23 @@ volatile int           F_STATE           = 0;
 volatile unsigned long bServoTimeBegin   = 0;
 volatile unsigned long fServoTimeBegin   = 0;
 
+int counter = 0;
+
 // SETUP -------------------------------------------------
 void setup() {
-    pinMode(MISO, OUTPUT);               // Enable SPI
-    SPCR |= _BV(SPE);
+    //pinMode(MISO, OUTPUT);               // Enable SPI
+    //SPCR |= _BV(SPE);
   
     pinMode(STBY_GEAR,    OUTPUT);       // Gears setup
+    pinMode(STBY_BELT,    OUTPUT);
 
     pinMode(CATCH_BUTTON, INPUT);        // Sensors setup
-    pinMode(IR_ENABLE,    OUTPUT);
+    //pinMode(IR_ENABLE,    OUTPUT);
   
     frontServoL.Attach (SERVO_FRONT_L);  // Servo setup
     frontServoM.Attach (SERVO_FRONT_M);
     frontServoR.Attach (SERVO_FRONT_R);
-    backServo.Attach   (SERVO_BACK);
+    backServo.Attach   (SERVO_BACK_R);
   
     frontServoL.reset ();
     frontServoR.reset ();
@@ -145,70 +148,114 @@ void setup() {
 
 // LOOP --------------------------------------------------
 void loop() {
+  /*
     if((SPSR & (1 << SPIF)) != 0){ 
         spiHandler();
     }
-  
-    if(motorRotationEnable){       // Bot is doing a rotation on itself
-        motorRotation();
+    */
+    if(!digitalRead(CATCH_BUTTON)){
+      counter++;
+      if(counter == 3){
+        F_STATE = F_CATCH_G;
+        fServoTimeBegin = millis();
+        
+      }
+      if(counter == 4){
+        bServoTimeBegin   = millis();
+        B_STATE = B_RELEASE;
+      }
+      if(counter >= 5){
+        counter = 0;
+      }
+      delay(300);
     }
-  
-    if(servoCatch){                // Bot will catch a puck in front of it
-        catchPuck();
-    }
-  
-    if(servoReleasePucks){         // Bot open back doors
-        freePucks();
-    }
+    
+      if(counter == 1){
+          frontServoM.writePos(M_GREEN);
+          digitalWrite(STBY_GEAR, HIGH);
+          motorA.drive(30, FORWARD);
+          motorB.drive(30, BACKWARD);
+          delay(400);
+          digitalWrite(STBY_GEAR, LOW);
+          motorA.mStop();
+          motorB.mStop();
+          counter = 2;
+          //return;
+      }
+      
+      else if(counter == 3){
+          if(motorRotationEnable){       // Bot is doing a rotation on itself
+              motorRotation();
+          }
+                      // Bot will catch a puck in front of it
+          catchPuck();
+          //return;
+      }
+    
+     else if(counter == 4){
+                // Bot open back doors
+            freePucks();
+            //return;
+      }
 }
 
 // FUNCTIONS ---------------------------------------------
 void catchPuck(void){
     switch(F_STATE){
-        case(F_CATCH_G): if((millis() - fServoTimeBegin) >= F_LAPSE){  // Catch a puck
+        case(F_CATCH_G): 
+            //delay(10);
+            if((millis() - fServoTimeBegin) >= F_LAPSE){  // Catch a puck
                 catchMoveG();
             }
             if((frontServoL.anglePos == L_PUSH)  &&
                (frontServoR.anglePos == R_CLOSE) &&
                (frontServoM.anglePos == M_MID)){
-                F_STATE = F_IR_G;
-                digitalWrite(IR_ENABLE, HIGH);
+                //F_STATE = F_IR_G;
+                //digitalWrite(IR_ENABLE, HIGH);
+                F_STATE = F_BELT;
                 fServoTimeBegin = 0;
             }
             break;
-        case(F_CATCH_R): if((millis() - fServoTimeBegin) >= F_LAPSE){
+        case(F_CATCH_R): 
+            delay(10);
+            //if((millis() - fServoTimeBegin) >= F_LAPSE){
                 catchMoveR();
-            }
+            //}
             if((frontServoL.anglePos == L_CLOSE) &&
                (frontServoR.anglePos == R_PUSH)  &&
                (frontServoM.anglePos == M_MID)){
-                digitalWrite(IR_ENABLE, HIGH);
-                F_STATE         = F_IR_R;
+                //digitalWrite(IR_ENABLE, HIGH);
+                //F_STATE         = F_IR_R;
                 fServoTimeBegin = millis();
+                F_STATE = F_BELT;
             }
             break;
         case(F_IR_G):    catchIRCheck(IR_CATCH_G);                     // Wait until IR detects
         case(F_IR_R):    catchIRCheck(IR_CATCH_R);                     // puck
-        case(F_BELT):    motorBelt.drive(MAX_SPEED, FORWARD);          // Pull the puck up
+        case(F_BELT):    
+                frontServoL.reset();
+                frontServoR.reset();
+                frontServoM.reset();
+                digitalWrite(STBY_BELT, HIGH);
+            motorBelt.drive(B_ROLL_SPEED, FORWARD);          // Pull the puck up
             fServoTimeBegin = millis();
             F_STATE         = F_PULL;
             break;
         case(F_PULL):    if((millis() - fServoTimeBegin) >= F_PULL_LAPSE){
-                frontServoL.reset();
-                frontServoR.reset();
-                frontServoM.reset();
+                
                 F_STATE = F_LIFT;
                 // READY TO MOVE //////////////////////////////////////
             }
             break;
-        case(F_LIFT):    if(!digitalRead(CATCH_BUTTON)){               // Puck is captured
+        case(F_LIFT):    //if(!digitalRead(CATCH_BUTTON)){               // Puck is captured
                 motorBelt.mStop();
+                digitalWrite(STBY_BELT, LOW);
                 F_STATE    = 0;
                 servoCatch = 0;
                 // JOB FINISHED ///////////////////////////////////////
-            }else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
+            //}else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
                 // ERROR //////////////////////////////////////////////
-            }
+            //}
     }
 }
 
@@ -300,8 +347,8 @@ void motorRotation(void){
 void freePucks(void){
     switch(B_STATE){
         case(B_RELEASE): if((millis() - bServoTimeBegin) >= B_LAPSE){  // Open doors, gently
-                             if(backServo.anglePos < B_OPEN){
-                                 backServo.anglePos += 1;
+                             if(backServo.anglePos > B_OPEN){
+                                 backServo.anglePos -= 1;
                                  backServo.updatePos();
                                  bServoTimeBegin = millis();
                              }else{
@@ -309,8 +356,9 @@ void freePucks(void){
                              }
                          }
                          break;
-        case(B_ROLL):    motorA.drive(B_ROLL_SPEED, FORWARD);          // drive forward to 
-                         motorB.drive(B_ROLL_SPEED, BACKWARD);         // free the pucks
+        case(B_ROLL):    digitalWrite(STBY_GEAR, HIGH);
+                         motorA.drive(40, FORWARD);          // drive forward to 
+                         motorB.drive(40, BACKWARD);         // free the pucks
                          bServoTimeBegin = millis();
                          B_STATE         = B_ROLLING;
                          break;
@@ -319,7 +367,8 @@ void freePucks(void){
                              B_STATE         = B_RECLOSE;
                          }
                          break;
-        case(B_RECLOSE): motorA.mStop   ();                            // Close doors, finished
+        case(B_RECLOSE): digitalWrite(STBY_GEAR, LOW);
+                         motorA.mStop   ();                            // Close doors, finished
                          motorB.mStop   ();
                          backServo.reset();
                          B_STATE           = 0;

@@ -9,7 +9,8 @@
 ***************************************************************/
 uint8_t receiveBuffer[5];
 uint8_t dat;
-byte marker = 0;
+byte marker     = 0;
+byte sendMarker = 0;
 bool dataWaiting;
 
 int timeout = 0;
@@ -22,17 +23,37 @@ volatile unsigned int rotTimeBegin = 0;
 volatile unsigned int rotTimeEnd = 0;
 bool rotationEnable = 0;
 
+// SENSORS
+bool startLoop = 1;
+int startSignal = 0;
+
+
 void setup() {
     pinMode(MISO, OUTPUT);
     SPCR |= _BV(SPE);
     initSPI(); // Initialize SPDR to 'h' -- heartbeat char, default char on SPDR.
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
+
+
 }
 
 void loop() {
     if ((SPSR & (1 << SPIF)) != 0) {
         spiHandler();
+    }
+
+    if (startLoop){
+        startSignal = 0;
+        for (int k = 0; k<10; k++){
+            startSignal = startSignal + analogRead(A1);
+        }
+        startSignal = startSignal/10;
+        if(startSignal < 800){
+            dataWaiting = 1;
+            startLoop = 0;
+            //  TODO: sendData
+        }
     }
 
     if (rotationEnable) {
@@ -53,6 +74,7 @@ void spiHandler() {
             if (SPDR == 'H') {
                 //TODO: move to initSPI()
                 if (dataWaiting) {
+                    marker = 7;
                     sendData();
                 }
                 else {
@@ -64,6 +86,9 @@ void spiHandler() {
             break;
         case 6:
             initSPI();      //Resets SPI communication stack
+        case 7:
+            sendData();
+            break;
         default:
             receiveBuffer[marker - 1] = SPDR;
             commandDecoder();
@@ -72,6 +97,16 @@ void spiHandler() {
 }
 
 void sendData() {
+    switch (sendMarker) {
+        case 0:
+            SPDR = 'd';
+            sendMarker++;
+            break;
+        case 1:
+            if (SPDR == 'D'){
+
+            }
+    }
 
 }
 
@@ -221,6 +256,7 @@ void motorDecoder() {
             */
 }
 
+/*
 // SPI interrupt routine
 ISR (SPI_STC_vect)
 {
@@ -238,3 +274,4 @@ ISR (SPI_STC_vect)
     }  // end of room available
 }  // end of interrupt routine SPI_STC_vect
 
+*/

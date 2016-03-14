@@ -79,13 +79,10 @@ int main(int argc, char **argv) {
     trajectory.setParams(0.15, 0.8, 0.3);
     trajectory.setWheelsPower(0.8);
 
-    cout << "end of trajectory" << "\n";
+
     //mvCtrl->arduiCommand({0, 0});
 
-    cout << "Success!\n";
-    cout << "End of program! after " << millis() - startTime << " [ms]\n";
-
-    int rc;
+    int rc = 0;
 
     pthread_t threads[5];
     //rc = pthread_create(&threads[0], NULL, imgProc, NULL);
@@ -101,9 +98,8 @@ int main(int argc, char **argv) {
     }
 
     scanf("%d", &rc);
+    mvCtrl->arduiCommand({0,0});
 
-    cout << "n: " << n << "\n";
-    cout << "FPS: " << n / 10 << "\n";
 
 
     if (RPI) {
