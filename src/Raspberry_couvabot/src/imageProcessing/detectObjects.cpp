@@ -86,8 +86,6 @@ bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, RotatedRect &board) {
         }
 
         board = minAreaRect(contours[biggest]);
-
-
         return true;
 
     } else {
@@ -144,4 +142,30 @@ void momentsOfOrder1(const cv::Mat &img, int *moments) {
             moments[i] = mom[0];
         }
     }
+}
+
+
+/** decide whether point p is in the ROI.
+*** The ROI is a rotated rectange whose 4 corners are stored in roi[]
+**/
+bool isInROI(Point p, Point2f roi[])
+{
+    double pro[4];
+    for(int i=0; i<4; ++i)
+    {
+        pro[i] = computeProduct(p, roi[i], roi[(i+1)%4]);
+    }
+    return pro[0] * pro[2] < 0 && pro[1] * pro[3] < 0;
+}
+
+/** function pro = kx-y+j, take two points a and b,
+*** compute the line argument k and j, then return the pro value
+*** so that can be used to determine whether the point p is on the left or right
+*** of the line ab
+**/
+double computeProduct(Point p, Point2f a, Point2f b)
+{
+    double k = (a.y-b.y) / (a.x-b.x);
+    double j = a.y - k*a.x;
+    return k*p.x - p.y + j;
 }

@@ -39,5 +39,7 @@ public:
     void read(cv::Mat &image);
 };
 
+double project(int x, int y);
+
 
 #endif //COUVABOT_CAMERA_H

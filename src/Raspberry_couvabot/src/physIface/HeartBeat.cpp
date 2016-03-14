@@ -34,7 +34,6 @@ int HeartBeat::pingArduino() {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     return 1;
 }

@@ -34,22 +34,22 @@ int main(int argc, char **argv) {
 
     double vBat;
 
-    /*
+
     if (argc > 1) {
-        vBat = strtod(argv[2], NULL);
+        vBat = strtod(argv[1], NULL);
         cout << "vBat :" << vBat << " [V]\n";
     } else {
         cerr << "You need to call this program with the vbat value!\n";
         return 1;
-    }*/
-
-    if (!initCam()) {
-        cerr << "camera initialization error !!!";
-        return 1;
     }
 
+    /*if (!initCam()) {
+        cerr << "camera initialization error !!!";
+        return 1;
+    }*/
 
-    if (!RPI) {
+
+    if (RPI) {
         try {
             //first clock divider for Arduino, second for 2nd SPI peripheral
             spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
     initialiseEpoch();
 
-    /*
+
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
     mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
 
@@ -75,13 +75,11 @@ int main(int argc, char **argv) {
 
     startTime = millis();
 
-/*
     trajectory = Trajectory();
     trajectory.setParams(0.15, 0.8, 0.3);
     trajectory.setWheelsPower(0.8);
 
     cout << "end of trajectory" << "\n";
-*/
     //mvCtrl->arduiCommand({0, 0});
 
     cout << "Success!\n";
@@ -90,7 +88,13 @@ int main(int argc, char **argv) {
     int rc;
 
     pthread_t threads[5];
-    rc = pthread_create(&threads[0], NULL, imgProc, NULL);
+    //rc = pthread_create(&threads[0], NULL, imgProc, NULL);
+    if (rc) {
+        cout << "Error:unable to create thread," << rc << endl;
+        exit(-1);
+    }
+
+    rc = pthread_create(&threads[1], NULL, loop, NULL);
     if (rc) {
         cout << "Error:unable to create thread," << rc << endl;
         exit(-1);
@@ -111,10 +115,14 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-int loop() {
+void * loop(void *threadArgs) {
 
     if (trajectory.update()) {
         mvCtrl->arduiCommand(trajectory.getWheelsPower());
+    }
+
+    if (heartBeat->pingArduino()) {
+        cout << "Arduino feedback received\n";
     }
 
     return 0;
@@ -135,8 +143,24 @@ void *imgProc(void *threadArgs) {
         Mat whiteBoardFiltered;
         imgProcess(whiteBoardBounds, hsv, whiteBoardFiltered);
         imshow("whiteBoard filtered", whiteBoardFiltered);
+
         RotatedRect board;
         filterBoard(whiteBoardBounds, whiteBoardFiltered, board);
+
+        Point2f vertices;
+        board.points(&vertices);
+/*
+        Mat mask = Mat(hsv.size(), CV_8U, Scalar(0));
+        for (int i = 0; i < img.rows; ++i) {
+            for (int j = 0; j < img.cols; ++j) {
+                Point p = Point(j, i);   // pay attention to the cordination
+                if (isInROI(p, &vertices)) {
+                    mask.at<uchar>(i, j) = 255;
+                }
+            }
+        }
+
+
 
         Scalar color = Scalar(155, 165, 23);
 
@@ -144,10 +168,10 @@ void *imgProc(void *threadArgs) {
         board.points(rect_points);
         for (int j = 0; j < 4; j++)
             line(img, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
-
+*/
         blobsReady = false;
 
-        //capBlobs();
+        capBlobs();
 
         if (CALIB) {
             imshow("camera", img);
@@ -160,7 +184,8 @@ void *imgProc(void *threadArgs) {
         blobsReady = true;
         n++;
 
-        waitKey(300);
+        if (CALIB)
+            waitKey(300);
     }
 
 
@@ -210,7 +235,7 @@ void capImage() {
 
 bool initCam() {
     if (RPI)
-        cam = new RPiCam();
+        cam = new WebCam();
     else
         cam = new WebCam();
     return true;

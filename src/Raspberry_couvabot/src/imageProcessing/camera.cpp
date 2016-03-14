@@ -58,3 +58,8 @@ void WebCam::read(cv::Mat &image) {
 void GenericCam::read(cv::Mat &image) {
     cerr << "WARNING! Using dummy camera!!\n";
 }
+
+double project(int x, int y) {
+
+
+}

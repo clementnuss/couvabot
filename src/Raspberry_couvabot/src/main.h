@@ -5,9 +5,9 @@
 #ifndef COUVABOT_MAIN_H
 #define COUVABOT_MAIN_H
 
-#define RPI false
-#define CALIB true
-
+#define RPI true
+#define CALIB false
+#define WITE_BOARD true
 
 #if RPI
 //include Raspberry things (Raspicam library)
@@ -56,7 +56,7 @@ void capImage();
 
 int main(int argc, char **argv);
 
-int loop();
+void * loop(void *threadArgs);
 
 void * imgProc(void *threadArgs);
 
