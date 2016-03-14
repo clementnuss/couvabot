@@ -23,15 +23,15 @@
 #define ROT_R       5
 
 //-------------------PINS TO CHANGE----------------------
-#define STBY_GEAR  27 //standby
+#define STBY_GEAR  26 //standby
 
 //Motor A
-#define PWMA_GEAR  3 //Speed control
+#define PWMA_GEAR  9 //Speed control
 #define AIN1_GEAR  22 //Direction
 #define AIN2_GEAR  23 //Direction
 
 //Motor B
-#define PWMB_GEAR  2 //Speed control
+#define PWMB_GEAR  8 //Speed control
 #define BIN1_GEAR  24 //Direction
 #define BIN2_GEAR  25 //Direction
 //-------------------------------------------------------
