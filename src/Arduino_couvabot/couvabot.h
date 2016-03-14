@@ -36,6 +36,15 @@
 #define BIN2_GEAR  25 //Direction
 //-------------------------------------------------------
 
+typedef struct IR_SENSOR IR_SENSOR;
+struct IR_SENSOR{
+    char pin1;
+    char pin2;
+    unsigned int value;
+};
+
+
+
 // Function declaration ----------------------------------
 int angleConvert(int rotAngle, int rotSpeed);
 
