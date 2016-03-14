@@ -14,19 +14,28 @@ private:
     double radius;  // radius of rotation
     double tx, ty;  // target x/y position
     double theta;   // angle of rotation
-    double rem;       // remaining distance at end of rotation
-    bool leftRot;
+    double rem;     // remaining distance at end of rotation
+    double speedPer, differentialRatio, speedRatio;
+    bool leftRot;   // when make a turn to the left, we need to swap the coordinates
+    bool straight, trajectoryEnded;  // true when the rotation is ended
     double vR, vL;
-    unsigned int startTime, time, it;
+    unsigned int time, it;
 
     double computeAngle(double alpha, double d, double rem, double a);  // Initial theta calculation
 
 public:
 
-    Trajectory(double radius, double tx, double ty);
-    gearsPower getWheelsPower(double speed);
-    int updateAngle();
+    Trajectory();
+
+    gearsPower setWheelsPower(double spd);
+
+    gearsPower getWheelsPower();
+
+    int update();
+
     void start();
+
+    void setParams(double radius, double tx, double ty);
 
 };
 

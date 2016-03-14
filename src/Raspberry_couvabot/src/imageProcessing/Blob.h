@@ -12,7 +12,7 @@ enum {
 class Blob {
     int colour;
     int posX, posY;
-    double area;
+    double area, d;
 
 public:
 
@@ -26,6 +26,9 @@ public:
 
     int getColour() const;
 
+    double getDistance() const;
 };
+
+bool compBlobs(const Blob &b1, const Blob &b2);
 
 #endif //OPENCV_BLOB_H

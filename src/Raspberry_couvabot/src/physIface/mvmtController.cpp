@@ -8,24 +8,9 @@
 
 using namespace mvmtCtrl;
 
-mvmtController::mvmtController() {
-
-    maxPWM = (int) ((7 * 255) / VBAT);
-
-    if (RPI) {
-        try {
-            //first clock divider for Arduino
-            spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
-        } catch (string exception) {
-            cerr << "Caught exception : " << exception;
-        }
-    }
-}
-
-bool mvmtController::move(int x, int y) {
-
-
-    return false;
+mvmtController::mvmtController(SPICom *spiCom, double vBat) {
+    maxPWM = (int) ((7 * 255) / vBat);
+    this->spiCom = spiCom;
 }
 
 
@@ -49,7 +34,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer('M');
     if (readData != 'a') {
@@ -57,7 +41,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     uint8_t controlByte = 0;
     if (pwmL > 1)
@@ -65,15 +48,12 @@ bool mvmtController::arduiCommand(gearsPower power) {
     if (pwmR > 1)
         controlByte = (uint8_t) ((power.pR >= 0) ? (controlByte | 0xF) : (controlByte | 0xB));
 
-    printf("controlByte: 0x%1x \n", controlByte);
-
     readData = spiCom->CS0_transfer(controlByte);
     if (readData != 'm') {
         cerr << "Protocol error after having sent controlByte\n";
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer(getPWM(power.pL));
     if (readData != 'o') {
@@ -81,7 +61,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer(getPWM(power.pR));
     if (readData != 'k') {
@@ -89,7 +68,6 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
-    usleep(1000);
 
     readData = spiCom->CS0_transfer('E');
     if (readData != 'o') {
@@ -97,6 +75,7 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
+
     return true;
 }
 

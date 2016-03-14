@@ -4,6 +4,8 @@
 
 #include <unistd.h>
 #include "SPICom.h"
+#include "../main.h"
+#include "localTime.h"
 
 bool bcm2835Initialized = false;
 
@@ -20,13 +22,11 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     this->chipSelect = BCM2835_SPI_CS0;
 
     if (!bcm2835_init())
-        cerr << "Big error during initialization of bcm2835 library!!";
+        cerr << "Error during initialization of bcm2835 library!!";
 
 
     if (!bcm2835Initialized)
         bcm2835_spi_begin();
-
-    cout << "Alive" << endl;
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE0);
@@ -35,10 +35,10 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, LOW);
 
-
+    cout << "Sending something\n";
     uint8_t readData = CS0_transfer('H'); //Send RPi heartbeat char 'H'
     if (readData != 'h') {
-        cerr << "Arduino doesnt have 'h' in SPDR .. waiting 3ms" << "\n";
+        cout << "Arduino doesnt have 'h' in SPDR .. waiting 3ms" << "\n";
         cerr << "instead it has: " << readData << "\n";
         usleep(3000); // Wait 3ms if no comm with Arduino
 
@@ -50,9 +50,17 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
         }
     }
 
+    cout << "Arduino communication initialized\n";
+
+    time = micros();
 }
 
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
+    if ((micros() - time) < 10) // Check that we haven't send anything for 10 us
+        usleep((micros() - time));
+
+    time = micros();
+
     if (chipSelect != BCM2835_SPI_CS0) {
         bcm2835_spi_setClockDivider(clockCS0);
         bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
@@ -75,8 +83,10 @@ uint8_t SPICom::CS1_transfer(uint8_t send_data) {
 #endif
 
 #if !RPI
+
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
 
+    cout << "Data to send " << (char) send_data << "[char] or " << send_data << " [hex]\n";
     return 'D'; //Default dummy data
 }
 

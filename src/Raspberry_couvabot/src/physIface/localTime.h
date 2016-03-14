@@ -6,7 +6,7 @@
 #define COUVABOT_TIME_H
 
 void initialiseEpoch (void);
-unsigned int micros (void);
-unsigned int millis (void);
+unsigned int micros();
+unsigned int millis();
 
 #endif //COUVABOT_TIME_H

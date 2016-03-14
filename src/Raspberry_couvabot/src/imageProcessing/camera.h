@@ -7,12 +7,16 @@
 
 #include <opencv2/highgui/highgui.hpp>
 #include "../main.h"
+#include "../../../raspicam/src/raspicam_cv.h"
 
 class GenericCam {
 public:
     virtual void read(cv::Mat &image) = 0;
 };
 
+/*
+ * Any webcam connected
+ */
 
 class WebCam : public GenericCam {
     cv::VideoCapture cap;
@@ -22,11 +26,14 @@ public:
     void read(cv::Mat &image);
 };
 
-class test : public GenericCam {
-
-};
+/*
+ * RPi Cam
+ */
 
 class RPiCam : public GenericCam {
+#if RPI
+    raspicam::RaspiCam_Cv camera;
+#endif
 public:
     RPiCam();
     void read(cv::Mat &image);
