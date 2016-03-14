@@ -50,6 +50,8 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
         }
     }
 
+
+    uint8_t readData = CS0_transfer('E'); //Send RPi EOT
     cout << "Arduino communication initialized\n";
 
     time = micros();

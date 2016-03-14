@@ -7,6 +7,6 @@
 
 
 #define AXLE 0.4
-#define WHEEL_SPEED 1.2
+#define WHEEL_SPEED 1/1.29
 
 #endif //COUVABOT_ROBOTCONSTANTS_H
