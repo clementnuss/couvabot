@@ -22,7 +22,7 @@ Trajectory trajectory;
 SPICom *spiCom;
 HeartBeat *heartBeat;
 Mat img, hsv, filtered;
-vector<Blob> redBlobs, greenBlobs;
+vector <Blob> redBlobs, greenBlobs;
 
 unsigned int n;
 
@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    /*if (!initCam()) {
+    if (!initCam()) {
         cerr << "camera initialization error !!!";
         return 1;
-    }*/
-
+    }
+/*
 
     if (RPI) {
         try {
@@ -67,12 +67,10 @@ int main(int argc, char **argv) {
 
     heartBeat = new HeartBeat(spiCom);
 
-    /*
      while (heartBeat->start() != 0) {
 
 
     }
-    */
 
     startTime = millis();
 
@@ -90,19 +88,19 @@ int main(int argc, char **argv) {
             return 0;
         }
 
-        /*
+
          if (heartBeat->pingArduino()) {
             cout << "Arduino feedback received\n";
-        }*/
+        }
     }
 
-
+*/
     //mvCtrl->arduiCommand({0, 0});
 
     int rc = 0;
 
     pthread_t threads[5];
-    //rc = pthread_create(&threads[0], NULL, imgProc, NULL);
+    rc = pthread_create(&threads[0], NULL, imgProc, NULL);
     if (rc) {
         cout << "Error:unable to create thread," << rc << endl;
         exit(-1);
@@ -115,8 +113,7 @@ int main(int argc, char **argv) {
     }
 
     scanf("%d", &rc);
-    mvCtrl->arduiCommand({0,0});
-
+    mvCtrl->arduiCommand({0, 0});
 
 
     if (RPI) {
@@ -128,7 +125,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void * loop(void *threadArgs) {
+void *loop(void *threadArgs) {
 
     if (trajectory.update()) {
         mvCtrl->arduiCommand(trajectory.getWheelsPower());
@@ -144,8 +141,8 @@ void * loop(void *threadArgs) {
 void *imgProc(void *threadArgs) {
 
     if (CALIB) {
-        //createTrackbars(hsvBoundsGreen, "Green Trackbars");
-        //createTrackbars(hsvBoundsRed, "Red Trackbars");
+        createTrackbars(hsvBoundsGreen, "Green Trackbars");
+        createTrackbars(hsvBoundsRed, "Red Trackbars");
         createTrackbars(whiteBoardBounds, "WhiteBoard bounds");
     }
 
@@ -186,6 +183,10 @@ void *imgProc(void *threadArgs) {
 
         capBlobs();
 
+        imshow("camera", img);
+        imshow("HSV image", hsv);
+
+
         if (CALIB) {
             imshow("camera", img);
             imshow("HSV image", hsv);
@@ -197,6 +198,7 @@ void *imgProc(void *threadArgs) {
         blobsReady = true;
         n++;
 
+        waitKey(300);
         if (CALIB)
             waitKey(300);
     }
@@ -229,14 +231,14 @@ void capBlobs() {
 
     imgProcess(hsvBoundsRed, hsv, filtered);
     detectObjects(redBlobs, filtered, RED);
-    //if (CALIB)
-    imshow("Red filtered", filtered);
+    if (CALIB)
+        imshow("Red filtered", filtered);
 
 
     imgProcess(hsvBoundsGreen, hsv, filtered);
     detectObjects(greenBlobs, filtered, GREEN);
-    //if (CALIB)
-    imshow("Green filtered", filtered);
+    if (CALIB)
+        imshow("Green filtered", filtered);
 
     blobsReady = true;
 }

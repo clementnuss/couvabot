@@ -57,7 +57,7 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
 }
 
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
-    if ((micros() - time) < 100) // Check that we haven't send anything for 1 ms
+    if ((micros() - time) < 50) // Check that we haven't send anything for 50 [us]
         usleep((micros() - time));
 
     if (DEBUG)
