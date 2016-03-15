@@ -5,6 +5,7 @@
 #define _USE_MATH_DEFINES
 
 #include <math.h>
+#include <unistd.h>
 
 #include "Trajectory.h"
 
@@ -86,7 +87,7 @@ int Trajectory::update() {
 
     if (straight) {
         if (trajectoryEnded)
-            return 1;
+            return 2;
 
         if ((micros() - time) < 1000)   // check distance every ms
             return 0;
@@ -99,11 +100,13 @@ int Trajectory::update() {
         it++;
 
         if (rem < 0.3) {
-            speedPer = speedPer * (rem/0.3);
-            return 1;
-        } else if (rem <= 0.05) {
-            trajectoryEnded = true;
-            cout << "End of trajectory at time " << millis() << ", after " << it << " iterations\n";
+            speedPer = speedPer * (rem / 0.3);
+            if (rem <= 0.1) {
+                trajectoryEnded = true;
+                cout << "End of trajectory at time " << millis() << ", after " << it << " iterations\n";
+                usleep(500000);
+                return 1;
+            }
             return 1;
         }
     }

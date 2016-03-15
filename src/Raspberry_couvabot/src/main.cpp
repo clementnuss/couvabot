@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
     mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
 
+
     heartBeat = new HeartBeat(spiCom);
 
     /*
@@ -76,8 +77,24 @@ int main(int argc, char **argv) {
     startTime = millis();
 
     trajectory = Trajectory();
-    trajectory.setParams(0.15, 0.8, 0.3);
-    trajectory.setWheelsPower(0.8);
+    trajectory.setParams(0.3, 0.8, 0.3);
+
+    trajectory.setWheelsPower(0.5);
+    trajectory.start();
+    while(1){
+        if (trajectory.update() != 2) {
+            mvCtrl->arduiCommand(trajectory.getWheelsPower());
+            usleep(50);
+        } else {
+            mvCtrl->arduiCommand(trajectory.getWheelsPower());
+            return 0;
+        }
+
+        /*
+         if (heartBeat->pingArduino()) {
+            cout << "Arduino feedback received\n";
+        }*/
+    }
 
 
     //mvCtrl->arduiCommand({0, 0});
@@ -91,7 +108,7 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    rc = pthread_create(&threads[1], NULL, loop, NULL);
+//    rc = pthread_create(&threads[1], NULL, loop, NULL);
     if (rc) {
         cout << "Error:unable to create thread," << rc << endl;
         exit(-1);

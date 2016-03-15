@@ -7,6 +7,7 @@
 
 #define RPI true
 #define CALIB false
+#define DEBUG false
 #define WITE_BOARD true
 
 #if RPI

@@ -35,7 +35,6 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS1, LOW);
 
-    cout << "Sending something\n";
     uint8_t readData = CS0_transfer('H'); //Send RPi heartbeat char 'H'
     if (readData != 'h') {
         cout << "Arduino doesnt have 'h' in SPDR .. waiting 3ms" << "\n";
@@ -51,15 +50,18 @@ SPICom::SPICom(bcm2835SPIClockDivider clockCS0, bcm2835SPIClockDivider clockCS1)
     }
 
 
-    uint8_t readData = CS0_transfer('E'); //Send RPi EOT
+    readData = CS0_transfer('E'); //Send RPi EOT
     cout << "Arduino communication initialized\n";
 
     time = micros();
 }
 
 uint8_t SPICom::CS0_transfer(uint8_t send_data) {
-    if ((micros() - time) < 10) // Check that we haven't send anything for 10 us
+    if ((micros() - time) < 100) // Check that we haven't send anything for 1 ms
         usleep((micros() - time));
+
+    if (DEBUG)
+        cout << "Data sent: " << send_data << "\n";
 
     time = micros();
 
@@ -68,8 +70,10 @@ uint8_t SPICom::CS0_transfer(uint8_t send_data) {
         bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
         chipSelect = BCM2835_SPI_CS0;
     }
-
-    return bcm2835_spi_transfer(send_data);
+    uint8_t read_Data =  bcm2835_spi_transfer(send_data);
+    if (DEBUG)
+        cout << "read data: " << read_Data << "\n";
+    return read_Data;
 }
 
 uint8_t SPICom::CS1_transfer(uint8_t send_data) {
