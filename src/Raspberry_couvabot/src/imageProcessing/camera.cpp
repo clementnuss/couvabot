@@ -3,6 +3,7 @@
 //
 
 #include "camera.h"
+#include <math.h>
 
 #if RPI
 
@@ -60,6 +61,14 @@ void GenericCam::read(cv::Mat &image) {
 }
 
 double project(int x, int y) {
+    double normPixel = y / 240;
 
+    double dist = x_5 * pow(normPixel, 5) +
+                  x_4 * pow(normPixel, 4) +
+                  x_3 * pow(normPixel, 3) +
+                  x_2 * pow(normPixel, 2) +
+                  x_1 * normPixel +
+                  x_0;
 
+    return dist;
 }

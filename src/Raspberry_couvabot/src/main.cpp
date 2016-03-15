@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     //mvCtrl->arduiCommand({0, 0});
 
     int rc = 0;
-
+    n = 0;
     pthread_t threads[5];
     rc = pthread_create(&threads[0], NULL, imgProc, NULL);
     if (rc) {
@@ -112,7 +112,9 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    scanf("%d", &rc);
+    usleep(10000000);
+    cout << n / 10 << " FPS.\n";
+
     mvCtrl->arduiCommand({0, 0});
 
 
@@ -149,7 +151,7 @@ void *imgProc(void *threadArgs) {
     while (1) {
 
         capImage();
-
+/*
         Mat whiteBoardFiltered;
         imgProcess(whiteBoardBounds, hsv, whiteBoardFiltered);
         imshow("whiteBoard filtered", whiteBoardFiltered);
@@ -159,7 +161,9 @@ void *imgProc(void *threadArgs) {
 
         Point2f vertices;
         board.points(&vertices);
-/*
+*/
+
+ /*
         Mat mask = Mat(hsv.size(), CV_8U, Scalar(0));
         for (int i = 0; i < img.rows; ++i) {
             for (int j = 0; j < img.cols; ++j) {
@@ -183,8 +187,6 @@ void *imgProc(void *threadArgs) {
 
         capBlobs();
 
-        imshow("camera", img);
-        imshow("HSV image", hsv);
 
 
         if (CALIB) {
@@ -198,7 +200,6 @@ void *imgProc(void *threadArgs) {
         blobsReady = true;
         n++;
 
-        waitKey(300);
         if (CALIB)
             waitKey(300);
     }

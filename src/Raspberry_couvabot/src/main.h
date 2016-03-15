@@ -10,6 +10,13 @@
 #define DEBUG false
 #define WITE_BOARD true
 
+#define x_5 766.803126447968
+#define x_4 -1229.155883963768
+#define x_3 749.636516965590
+#define x_2 -166.505522823536
+#define x_1 60.240735082265
+#define x_0 21.679281107097
+
 #if RPI
 //include Raspberry things (Raspicam library)
 #define FRAME_WIDTH 320
@@ -19,8 +26,6 @@
 #define KEY_DOWN 65364
 #define KEY_LEFT 65361
 #define KEY_RIGHT 65363
-#define FRAME_WIDTH 320
-#define FRAME_HEIGHT 240
 
 #else
 #define FRAME_WIDTH 320
