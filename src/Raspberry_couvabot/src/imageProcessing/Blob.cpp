@@ -3,6 +3,7 @@
 //
 
 #include "Blob.h"
+#include "camera.h"
 #include <math.h>
 
 Blob::Blob(int posX, int posY, int area, int colour) {
@@ -10,9 +11,6 @@ Blob::Blob(int posX, int posY, int area, int colour) {
     this->posY = posY;
     this->area = area;
     this->colour = colour;
-
-    //TODO: implement projection !!
-    this->d = sqrt(pow(posX, 2) + pow(posY, 2));
 }
 
 int Blob::getPosX() const {
@@ -31,10 +29,6 @@ int Blob::getColour() const {
     return colour;
 }
 
-double Blob::getDistance() const {
-    return d;
-}
-
 bool compBlobs(const Blob &b1, const Blob &b2) {
-    return b1.getDistance() > b2.getDistance();
+    return b1.getArea() > b2.getArea();
 }

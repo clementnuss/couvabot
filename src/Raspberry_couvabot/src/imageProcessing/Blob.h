@@ -12,7 +12,7 @@ enum {
 class Blob {
     int colour;
     int posX, posY;
-    double area, d;
+    double area;
 
 public:
 
@@ -25,8 +25,6 @@ public:
     double getArea() const;
 
     int getColour() const;
-
-    double getDistance() const;
 };
 
 bool compBlobs(const Blob &b1, const Blob &b2);

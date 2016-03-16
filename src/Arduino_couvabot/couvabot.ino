@@ -24,7 +24,7 @@ volatile unsigned int rotTimeEnd = 0;
 bool rotationEnable = 0;
 
 // SENSORS
-bool startLoop = 1;
+bool startLoop = 0;
 int startSignal = 0;
 
 

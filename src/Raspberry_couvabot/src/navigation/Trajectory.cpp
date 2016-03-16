@@ -50,7 +50,6 @@ gearsPower Trajectory::setWheelsPower(double spd) {
     pR *= spd;
     speedPer = spd;
 
-    //TODO: insert calibration value!
     vL = mvmtController::powerToSpeed(pL);
     vR = mvmtController::powerToSpeed(pR);
     speedRatio = (vL - vR) / AXLE;

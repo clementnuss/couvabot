@@ -60,8 +60,12 @@ void GenericCam::read(cv::Mat &image) {
     cerr << "WARNING! Using dummy camera!!\n";
 }
 
+/*
+ * Uses a polygon (of order 5) to approximate the distance in the middle of the image
+ */
+
 double project(int x, int y) {
-    double normPixel = y / 240;
+    double normPixel = y / 240.;
 
     double dist = x_5 * pow(normPixel, 5) +
                   x_4 * pow(normPixel, 4) +
