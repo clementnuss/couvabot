@@ -44,7 +44,7 @@ public:
     void updatePos(void){
         servo.write(anglePos);
     }
-}
+};
 
 uint8_t receiveBuffer[5];
 uint8_t dat;
