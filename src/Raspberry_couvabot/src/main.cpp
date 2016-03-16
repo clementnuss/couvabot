@@ -15,6 +15,8 @@
 #include "navigation/Trajectory.h"
 #include "navigation/differentialDrive.h"
 
+using namespace std;
+
 GenericCam *cam;
 HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds;
 mvmtCtrl::mvmtController *mvCtrl;
@@ -22,7 +24,7 @@ Trajectory trajectory;
 SPICom *spiCom;
 HeartBeat *heartBeat;
 Mat img, hsv, filtered;
-vector<Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
+vector <Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
 
 pthread_mutex_t mutexBlobs, mutexCount;
 bool endImgProc, loopStart;
@@ -40,6 +42,13 @@ int main(int argc, char **argv) {
     hsvBoundsRed.sMax = 204;
     hsvBoundsRed.vMin = 79;
     hsvBoundsRed.vMax = 121;
+
+    hsvBoundsGreen.hMin = 0;
+    hsvBoundsGreen.hMax = 0;
+    hsvBoundsGreen.sMin = 0;
+    hsvBoundsGreen.sMax = 0;
+    hsvBoundsGreen.vMin = 0;
+    hsvBoundsGreen.vMax = 0;
 
     double vBat;
 
@@ -68,7 +77,14 @@ int main(int argc, char **argv) {
     processedFrames = 0;
 
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
-    mvCtrl->arduiCommand({0, 0});
+    mvCtrl->gearsCommand({0, 0});
+
+    /*
+    mvCtrl->gearsCommand({0.5, 0.5});
+    usleep(5000000); // wait 500 [ms] to make sure the loop thread has stopped
+    mvCtrl->gearsCommand({0, 0});
+    */
+
 
     heartBeat = new HeartBeat(spiCom);
 
@@ -112,7 +128,7 @@ int main(int argc, char **argv) {
     pthread_cancel(threads[0]); // End the image processing thread
     pthread_cancel(threads[1]); // End the loop thread
 
-    mvCtrl->arduiCommand({0, 0});
+    mvCtrl->gearsCommand({0, 0});
 
 
     if (RPI) {
@@ -124,6 +140,8 @@ int main(int argc, char **argv) {
 }
 
 void *loop(void *threadArgs) {
+
+    int const middleX = FRAME_WIDTH / 2;
 
     if (!loopStart) {
         cout << "Loop thread called and startLoop is false .. exiting\n";
@@ -137,7 +155,7 @@ void *loop(void *threadArgs) {
     int const bufferSize = 5;
     Blob blobsBuffer[bufferSize];
     for (int i = 0; i < bufferSize; ++i) {
-        blobsBuffer[i] = Blob();
+        blobsBuffer[i] = Blob(0, 0, -1, 0);
     }
 
     while (checkTime() == 0) {
@@ -157,12 +175,13 @@ void *loop(void *threadArgs) {
                 maxG = &processedGreenBlobs.at(0);  // Get blob with biggest area
             } else {
                 maxG = new Blob();
+                cout << "No green blobs\n";
             }
             if (processedRedBlobs.size() > 0) {
                 maxR = &processedRedBlobs.at(0);  // Get blob with biggest area
             } else {
                 maxR = new Blob();
-
+                cout << "No red blobs\n";
             }
 
             pthread_mutex_unlock(&mutexBlobs);
@@ -183,6 +202,15 @@ void *loop(void *threadArgs) {
                     i++;
             }
 
+            if (!targetFound) {
+                mvCtrl->gearsCommand({0, 0});
+                cout << "No target found\n";
+                continue;
+            }
+
+            cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
+            " ,aire " << target->getArea() << "et couleur " << target->getColour() << "\n";
+
             target = &blobsBuffer[i];
 
 
@@ -196,19 +224,26 @@ void *loop(void *threadArgs) {
                 speed = 0.35;
             } else if (dTarget > 30) {
                 speed = 0.1;
+                if ((target->getPosX() - middleX) < -2) {
+                    mvCtrl->prepareLeft();
+                    cout << "Prepared left container\n";
+                }
+                else {
+                    mvCtrl->prepareRight();
+                    cout << "Prepared right container\n";
+                }
             } else if (dTarget <= 25) {
                 speed = 0.0;
+                mvCtrl->catchPuck();
             }
 
-            mvCtrl->arduiCommand(getParams(target->getPosX(), target->getPosY(), speed));
+            mvCtrl->gearsCommand(getParams(target->getPosX(), target->getPosY(), speed));
 
             processedFrames++;
 
 
             cout << "Number of processed frames : " << processedFrames << "\n";
         }
-
-
 
 
     }
@@ -229,7 +264,7 @@ int checkTime() {
 void *imgProc(void *threadArgs) {
 
     if (CALIB) {
-        createTrackbars(hsvBoundsGreen, "Green Trackbars");
+        //createTrackbars(hsvBoundsGreen, "Green Trackbars");
         createTrackbars(hsvBoundsRed, "Red Trackbars");
         //createTrackbars(whiteBoardBounds, "WhiteBoard bounds");
     }
@@ -268,7 +303,7 @@ void *imgProc(void *threadArgs) {
 */
 
         if (CALIB) {
-            imshow("camera", img);
+            //imshow("camera", img);
             imshow("HSV image", hsv);
         }
 //
@@ -304,14 +339,16 @@ void capBlobs() {
 
     imgProcess(hsvBoundsRed, hsv, filtered);
     detectObjects(redBlobs, filtered, RED);
+    cout << "Red blobs size: " << redBlobs.size() << "\n";
     if (CALIB)
         imshow("Red filtered", filtered);
 
-
+    /*
     imgProcess(hsvBoundsGreen, hsv, filtered);
     detectObjects(greenBlobs, filtered, GREEN);
     if (CALIB)
         imshow("Green filtered", filtered);
+    */
 }
 
 void capImage() {

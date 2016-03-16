@@ -9,24 +9,30 @@
 
 namespace mvmtCtrl {
 
-    struct gearsPower{
+    struct gearsPower {
         double pL;  // left gear percentage
         double pR;  // right gear percentage
     };
 
 
     class mvmtController {
-        int     maxPWM;
-        SPICom  *spiCom;
+        int maxPWM;
+        SPICom *spiCom;
         uint8_t readData;
 
     public:
 
         mvmtController(SPICom *spiCom, double vBat);
 
-        bool arduiCommand(gearsPower powers);
+        bool gearsCommand(gearsPower powers);
 
         static double powerToSpeed(double power);
+
+        bool catchPuck();
+
+        bool prepareLeft();
+
+        bool prepareRight();
 
     private:
 

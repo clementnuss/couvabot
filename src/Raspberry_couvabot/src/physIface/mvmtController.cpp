@@ -22,7 +22,7 @@ uint8_t mvmtController::getPWM(double p) {
     return (uint8_t) ((maxPWM * p) > maxPWM ? maxPWM : maxPWM * p);
 }
 
-bool mvmtController::arduiCommand(gearsPower power) {
+bool mvmtController::gearsCommand(gearsPower power) {
 
     int pwmL = getPWM(fabs(power.pL));
     int pwmR = getPWM(fabs(power.pR));
@@ -75,6 +75,50 @@ bool mvmtController::arduiCommand(gearsPower power) {
         cerr << "Received: " << readData << "\n";
         return false;
     }
+
+    return true;
+}
+
+bool mvmtController::catchPuck() {
+
+    readData = spiCom->CS0_transfer('H');
+    if (readData != 'h') {
+        cerr << "Protocol handshake error!\n";
+        cerr << "Received: " << readData << "\n";
+        return false;
+    }
+
+    spiCom->CS0_transfer('C');
+
+    return true;
+}
+
+
+bool mvmtController::prepareLeft() {
+
+    readData = spiCom->CS0_transfer('H');
+    if (readData != 'h') {
+        cerr << "Protocol handshake error!\n";
+        cerr << "Received: " << readData << "\n";
+        return false;
+    }
+
+    spiCom->CS0_transfer('L');
+
+    return true;
+}
+
+
+bool mvmtController::prepareRight() {
+
+    readData = spiCom->CS0_transfer('H');
+    if (readData != 'h') {
+        cerr << "Protocol handshake error!\n";
+        cerr << "Received: " << readData << "\n";
+        return false;
+    }
+
+    spiCom->CS0_transfer('R');
 
     return true;
 }

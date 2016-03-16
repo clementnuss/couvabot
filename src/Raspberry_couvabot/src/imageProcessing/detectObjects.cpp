@@ -15,7 +15,7 @@ using namespace cv;
 
 //Minimum/maximum detection settings
 const int MIN_AREA = 18 * 18;
-const int MAX_AREA = FRAME_WIDTH * FRAME_HEIGHT / 4;
+const int MAX_AREA = 500;
 const int MAX_NUM_OBJECTS = 30;
 
 
@@ -44,6 +44,7 @@ bool detectObjects(vector<Blob> &blobs, Mat binaryImage, int colour) {
                 int y = (moments[2] / area);    //m01
                 Blob tmpBlob(x, y, area, colour);
                 blobs.push_back(tmpBlob);
+                cout << "Added a blob\n";
             }
         }
         return true;
