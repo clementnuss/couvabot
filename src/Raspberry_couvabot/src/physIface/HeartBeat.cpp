@@ -2,7 +2,6 @@
 // Created by clement on 12.03.2016.
 //
 
-#include <unistd.h>
 #include "HeartBeat.h"
 #include "localTime.h"
 

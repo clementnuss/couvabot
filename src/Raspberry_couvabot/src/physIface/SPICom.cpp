@@ -4,8 +4,8 @@
 
 #include <unistd.h>
 #include "SPICom.h"
-#include "../main.h"
 #include "localTime.h"
+#include "../robotConstants.h"
 
 bool bcm2835Initialized = false;
 

@@ -5,8 +5,13 @@
 #ifndef COUVABOT_OBJDETECT_H
 #define COUVABOT_OBJDETECT_H
 
-#include "../main.h"
+#include <opencv2/core/core.hpp>
 
+#include "../robotConstants.h"
+#include "Blob.h"
+
+using namespace std;
+using namespace cv;
 
 /*
  * Takes a vector of Blobs as an argument, and fills it if blobs were found.

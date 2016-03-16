@@ -2,6 +2,14 @@
 // Created by clement on 26.02.2016.
 //
 
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <c++/4.8.3/iostream>
+
+using namespace std;
+using namespace cv;
+
+#include "../robotConstants.h"
 #include "detectObjects.h"
 
 //Minimum/maximum detection settings

@@ -2,8 +2,10 @@
 // Created by clement on 26.02.2016.
 //
 
-#include "camera.h"
 #include <math.h>
+#include "camera.h"
+#include "../robotConstants.h"
+#include <c++/4.8.3/iostream>
 
 #if RPI
 

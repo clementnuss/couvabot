@@ -2,9 +2,9 @@
 // Created by clement on 04.03.2016.
 //
 
-#include "../main.h"
+#include <math.h>
 #include "mvmtController.h"
-#include "robotConstants.h"
+#include "../robotConstants.h"
 
 using namespace mvmtCtrl;
 
@@ -24,8 +24,8 @@ uint8_t mvmtController::getPWM(double p) {
 
 bool mvmtController::arduiCommand(gearsPower power) {
 
-    int pwmL = getPWM(abs(power.pL));
-    int pwmR = getPWM(abs(power.pR));
+    int pwmL = getPWM(fabs(power.pL));
+    int pwmR = getPWM(fabs(power.pR));
     cout << "pwmL: " << pwmL << " et pwmR: " << pwmR << "\n";
 
     readData = spiCom->CS0_transfer('H');

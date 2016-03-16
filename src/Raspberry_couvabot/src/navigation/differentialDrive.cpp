@@ -3,7 +3,7 @@
 //
 
 #include "differentialDrive.h"
-#include "../main.h"
+#include "../robotConstants.h"
 
 int const middleX = FRAME_WIDTH / 2;
 double const diffCoeff = 0.15;

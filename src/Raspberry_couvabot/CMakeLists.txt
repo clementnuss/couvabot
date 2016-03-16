@@ -20,7 +20,7 @@ link_directories(../RPi/bcm2835-1.49/src)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES
-        src/physIface/robotConstants.h
+        src/robotConstants.h
         src/imageProcessing/camera.cpp
         src/imageProcessing/detectObjects.cpp
         src/imageProcessing/Blob.cpp
@@ -29,12 +29,13 @@ set(SOURCE_FILES
         src/physIface/localTime.cpp
         src/physIface/SPICom.cpp
         src/physIface/mvmtController.cpp
-        src/physIface/HeartBeat.cpp
-        src/main.cpp)
-add_executable(main ${SOURCE_FILES})
+        src/physIface/HeartBeat.cpp)
+
+add_executable(main ${SOURCE_FILES} src/main.cpp)
 
 if(UNIX)
     target_link_libraries(main ${OpenCV_LIBS}  bcm2835 ${raspicam_CV_LIBS} pthread)
+    target_link_libraries(couvabot ${OpenCV_LIBS}  bcm2835 ${raspicam_CV_LIBS} pthread)
     set (CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -mfloat-abi=hard -mfpu=vfp")
     #Amélioration des performances
     #https://www.raspberrypi.org/forums/viewtopic.php?f=63&t=115795

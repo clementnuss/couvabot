@@ -6,8 +6,11 @@
 #define COUVABOT_CAMERA_H
 
 #include <opencv2/highgui/highgui.hpp>
-#include "../main.h"
 #include "../../../raspicam/src/raspicam_cv.h"
+
+using namespace std;
+using namespace cv;
+
 
 class GenericCam {
 public:

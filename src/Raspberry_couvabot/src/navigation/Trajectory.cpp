@@ -11,7 +11,7 @@
 
 using mvmtCtrl::mvmtController;
 
-#include "../physIface/robotConstants.h"
+#include "../robotConstants.h"
 #include "../physIface/localTime.h"
 
 /*

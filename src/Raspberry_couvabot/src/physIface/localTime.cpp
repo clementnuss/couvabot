@@ -7,7 +7,6 @@
 #include "localTime.h"
 #include <sys/time.h>
 #include <stdint.h>
-#include <cstddef>
 
 static uint64_t epochMilli, epochMicro;
 
