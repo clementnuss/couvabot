@@ -5,7 +5,7 @@
 #include <math.h>
 #include "camera.h"
 #include "../robotConstants.h"
-#include <c++/4.8.3/iostream>
+#include <iostream>
 
 #if RPI
 
@@ -13,6 +13,7 @@
 
 
 RPiCam::RPiCam() {
+    /*
 #if RPI
     // Set properties
     camera.set(CV_CAP_PROP_FORMAT, CV_8UC3);
@@ -28,15 +29,16 @@ RPiCam::RPiCam() {
 
     std::cout << "RPi camera initialized\n";
 #endif
+     */
 }
 
 
 void RPiCam::read(cv::Mat &image) {
 #if RPI
-
+/*
     camera.grab();
     camera.retrieve(image);
-
+*/
 #endif
 }
 

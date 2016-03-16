@@ -12,7 +12,7 @@ struct HSVbounds {
 };
 
 
-#define RPI false
+#define RPI true
 #define CALIB false
 #define DEBUG false
 #define WITE_BOARD false
