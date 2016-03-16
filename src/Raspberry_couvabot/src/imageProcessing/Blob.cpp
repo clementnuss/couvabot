@@ -32,3 +32,9 @@ int Blob::getColour() const {
 bool compBlobs(const Blob &b1, const Blob &b2) {
     return b1.getArea() > b2.getArea();
 }
+
+Blob::Blob() {
+    posX = posY = 0;
+    area = -1;
+    colour = -1;
+}

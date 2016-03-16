@@ -16,6 +16,8 @@ class Blob {
 
 public:
 
+    Blob();
+
     Blob(int posX, int posY, int area, int colour);
 
     int getPosX() const;

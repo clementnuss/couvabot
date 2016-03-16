@@ -25,7 +25,7 @@ Mat img, hsv, filtered;
 vector<Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
 
 pthread_mutex_t mutexBlobs, mutexCount;
-bool endImgProc, endLoop;
+bool endImgProc, loopStart;
 
 unsigned int acquiredFrames, processedFrames;
 unsigned startTime;
@@ -33,6 +33,13 @@ unsigned startTime;
 int checkTime();
 
 int main(int argc, char **argv) {
+
+    hsvBoundsRed.hMin = 0;
+    hsvBoundsRed.hMax = 11;
+    hsvBoundsRed.sMin = 119;
+    hsvBoundsRed.sMax = 204;
+    hsvBoundsRed.vMin = 79;
+    hsvBoundsRed.vMax = 121;
 
     double vBat;
 
@@ -57,6 +64,8 @@ int main(int argc, char **argv) {
 
     initialiseEpoch();
 
+    acquiredFrames = 0;
+    processedFrames = 0;
 
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
     mvCtrl->arduiCommand({0, 0});
@@ -66,10 +75,7 @@ int main(int argc, char **argv) {
     // initialize the camera
     initCam();
 
-
-    startTime = millis();
-    acquiredFrames = 0;
-    processedFrames = 0;
+    loopStart = false;
 
     int rc = 0;
     pthread_t threads[3];
@@ -80,13 +86,22 @@ int main(int argc, char **argv) {
     } else
         cout << "imgProcessing thread launched\n";
 
-    rc = pthread_create(&threads[1], NULL, loop, NULL);
+    rc = pthread_create(&threads[1], NULL, loop, (void *) -1);
     if (rc) {
         cout << "Error:unable to create thread," << rc << endl;
         exit(-1);
     } else
         cout << "loop thread launched\n";
 
+    usleep(500000); // wait 500 [ms] to make sure the loop thread has stopped
+
+    loopStart = true;
+    rc = pthread_create(&threads[1], NULL, loop, (void *) -1);
+    if (rc) {
+        cout << "Error:unable to create thread," << rc << endl;
+        exit(-1);
+    } else
+        cout << "loop thread launched\n";
 
     int tmp = 0;
     scanf("%d", &tmp);
@@ -95,11 +110,7 @@ int main(int argc, char **argv) {
     endImgProc = true;
 
     pthread_cancel(threads[0]); // End the image processing thread
-    usleep(1000000);
-
-    rc = pthread_create(&threads[2], NULL, imgProc, NULL);
-    scanf("%d", &tmp);
-
+    pthread_cancel(threads[1]); // End the loop thread
 
     mvCtrl->arduiCommand({0, 0});
 
@@ -113,11 +124,29 @@ int main(int argc, char **argv) {
 }
 
 void *loop(void *threadArgs) {
-    int procN = 0;  // number of processed frames
 
-    while (checkTime() != 1) {
+    if (!loopStart) {
+        cout << "Loop thread called and startLoop is false .. exiting\n";
+        pthread_exit(NULL);
+    } else {
+        cout << "Loop thread started !\n";
+    }
 
-        if (acquiredFrames > procN) {    // New processed image
+    int acqFrames = 0;
+
+    int const bufferSize = 5;
+    Blob blobsBuffer[bufferSize];
+    for (int i = 0; i < bufferSize; ++i) {
+        blobsBuffer[i] = Blob();
+    }
+
+    while (checkTime() == 0) {
+
+        pthread_mutex_lock(&mutexCount);
+        acqFrames = acquiredFrames;
+        pthread_mutex_unlock(&mutexCount);
+
+        if (acquiredFrames > processedFrames) {    // New processed image
 
             // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
             pthread_mutex_lock(&mutexBlobs);
@@ -127,16 +156,36 @@ void *loop(void *threadArgs) {
             if (processedGreenBlobs.size() > 0) {
                 maxG = &processedGreenBlobs.at(0);  // Get blob with biggest area
             } else {
-                maxG = new Blob(0, 0, -1, GREEN);
+                maxG = new Blob();
             }
             if (processedRedBlobs.size() > 0) {
                 maxR = &processedRedBlobs.at(0);  // Get blob with biggest area
             } else {
-                maxR = new Blob(0, 0, -1, RED);
+                maxR = new Blob();
 
             }
 
+            pthread_mutex_unlock(&mutexBlobs);
+
             target = (maxG->getArea() > maxR->getArea()) ? maxG : maxR;
+
+            for (int i = 1; i < bufferSize; ++i) {
+                blobsBuffer[i] = blobsBuffer[i - 1];
+            }
+            blobsBuffer[0] = *target;
+
+            int i = 0;
+            bool targetFound = false;
+            while (!targetFound && i < bufferSize) {
+                if (blobsBuffer[i].getArea() >= 0)
+                    targetFound = true;
+                else
+                    i++;
+            }
+
+            target = &blobsBuffer[i];
+
+
             double dTarget = project(target->getPosX(), target->getPosY());
             double speed = 0;
             if (dTarget > 80) {
@@ -152,10 +201,14 @@ void *loop(void *threadArgs) {
             }
 
             mvCtrl->arduiCommand(getParams(target->getPosX(), target->getPosY(), speed));
-            procN++;
 
-            pthread_mutex_unlock(&mutexBlobs);
+            processedFrames++;
+
+
+            cout << "Number of processed frames : " << processedFrames << "\n";
         }
+
+
 
 
     }
@@ -164,11 +217,13 @@ void *loop(void *threadArgs) {
         cout << "Arduino feedback received\n";
     }
 
+    cout << "Loop thread cleanly closed\n";
+
     pthread_exit(NULL);
 }
 
 int checkTime() {
-    return (millis() - startTime) < 105000;
+    return (millis() - startTime) > 105000;
 }
 
 void *imgProc(void *threadArgs) {
@@ -232,13 +287,15 @@ void *imgProc(void *threadArgs) {
         // unlock variables
         pthread_mutex_unlock(&mutexBlobs);
 
+        pthread_mutex_lock(&mutexCount);
         acquiredFrames++;
+        pthread_mutex_unlock(&mutexCount);
 
         if (CALIB)
             waitKey(30);
     }
 
-    cout << "Loop thread cleanly closed\n";
+    cout << "Image processing thread cleanly closed\n";
 
     pthread_exit(NULL);
 }

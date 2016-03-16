@@ -17,7 +17,7 @@ endif()
 include_directories(../RPi/bcm2835-1.49/src/)
 link_directories(../RPi/bcm2835-1.49/src)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fpermissive")
 
 set(SOURCE_FILES
         src/robotConstants.h
