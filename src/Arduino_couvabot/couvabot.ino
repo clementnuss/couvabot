@@ -1,4 +1,5 @@
 #include "couvabot.h"
+#include <Servo.h>
 
 /***************************************************************
  Global Variables
@@ -7,6 +8,44 @@
   -marker is used as a pointer to keep track of the current
    position in the incoming data packet
 ***************************************************************/
+class ServoM
+{
+    // Class Member Variables
+    // These are initialized at startup
+    Servo servo;
+    int   resetPos;                      // Servo position at startup
+
+public:
+    volatile int anglePos;               // Position of servo at any time
+
+    ServoM(int rPos){
+        resetPos = rPos;
+        anglePos = rPos;
+    }
+
+    void Attach(int pin){
+        servo.attach(pin);
+    }
+
+    void Detach(){
+        servo.detach();
+    }
+
+    void reset(void){
+        servo.write(resetPos);
+        anglePos = resetPos;
+    }
+
+    void writePos(int angle){
+        servo.write(angle);
+        anglePos = angle;
+    }
+
+    void updatePos(void){
+        servo.write(anglePos);
+    }
+}
+
 uint8_t receiveBuffer[5];
 uint8_t dat;
 byte marker     = 0;

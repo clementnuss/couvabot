@@ -155,6 +155,7 @@ void loop() {
     */
     if(!digitalRead(CATCH_BUTTON)){
       counter++;
+      //counter = 1;
       if(counter == 3){
         F_STATE = F_CATCH_G;
         fServoTimeBegin = millis();
