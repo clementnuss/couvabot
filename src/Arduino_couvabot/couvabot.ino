@@ -22,9 +22,21 @@ uint8_t state[2];
 // MOTORS
 Motor motorLeft(AIN1_GEAR, AIN2_GEAR, PWMA_GEAR);
 Motor motorRight(BIN1_GEAR, BIN2_GEAR, PWMB_GEAR);
+Motor motorBelt (AIN1_BELT, AIN2_BELT, PWM_BELT);
 volatile unsigned int rotTimeBegin = 0;
 volatile unsigned int rotTimeEnd = 0;
-bool rotationEnable = 0;
+
+// SERVOS
+ServoM frontServoL (L_OPEN);                        // Object declaration
+ServoM frontServoR (R_OPEN);
+ServoM frontServoM (M_MID);
+ServoM backServo   (B_CLOSE);
+bool                   servoReleasePucks = 0;
+bool                   servoCatch        = 0;
+volatile int           B_STATE           = 0;
+volatile int           F_STATE           = 0;
+volatile unsigned long bServoTimeBegin   = 0;
+volatile unsigned long fServoTimeBegin   = 0;
 
 // SENSORS
 bool startLoop = 0;
@@ -37,8 +49,17 @@ void setup() {
     initSPI(); // Initialize SPDR to 'h' -- heartbeat char, default char on SPDR.
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
+    pinMode(STBY_BELT,    OUTPUT);
 
+    frontServoL.Attach (SERVO_FRONT_L);  // Servo setup
+    frontServoM.Attach (SERVO_FRONT_M);
+    frontServoR.Attach (SERVO_FRONT_R);
+    backServo.Attach   (SERVO_BACK_R);
 
+    frontServoL.reset ();
+    frontServoR.reset ();
+    frontServoM.reset ();
+    backServo.reset   ();
 }
 
 void loop() {
@@ -59,15 +80,9 @@ void loop() {
         }
     }
 
-    if (rotationEnable) {
-        if ((millis() - rotTimeBegin) > rotTimeEnd) {
-            motorLeft.mStop();
-            motorLeft.mStop();
-            rotTimeBegin = 0;
-            rotTimeEnd = 0;
-            rotationEnable = 0;
-        }
-    }
+    if (servoCatch) catchPuck();
+
+    if (servoReleasePucks) freePucks();
 }
 
 void spiHandler() {
@@ -150,30 +165,25 @@ void commandDecoder() {
             break;
         case 'L':
             initSPI();
-            //servoPrepare(left container);
+            servoPrepare(M_LEFT);
             break;
         case 'R':
             initSPI();
-            //servoPrepare(right container);
+            servoPrepare(M_RIGHT);
             break;
         case 'k':
             marker = 0;           // Catch the puck
-            //catchPuck();
+            servoCatch = 1;
             break;
         case 'f':
             marker = 0;           // Release all pucks
-            //freePucks();
+            servoReleasePucks = 1;
             break;
 
         default:
             initSPI();
             break;
     }
-}
-
-int angleConvert(int rotAngle, int rotSpeed) {
-    int travelTime;
-    travelTime = floor((rotAngle / rotSpeed) * 1000);
 }
 
 void motorDecoder() {
@@ -257,6 +267,138 @@ void motorDecoder() {
             motorRight.mStop();
             break;
             */
+}
+
+void catchPuck(void){
+    switch(F_STATE){
+        case(F_CATCH_L):
+            if((millis() - fServoTimeBegin) >= F_LAPSE){  // Catch a puck
+                catchMoveL();
+            }
+            if((frontServoL.anglePos == L_PUSH)  &&
+               (frontServoR.anglePos == R_CLOSE) &&
+               (frontServoM.anglePos == M_MID)){
+                F_STATE = F_BELT;
+                fServoTimeBegin = 0;
+            }
+            break;
+        case(F_CATCH_R):
+            if((millis() - fServoTimeBegin) >= F_LAPSE){
+            catchMoveR();
+            }
+            if((frontServoL.anglePos == L_CLOSE) &&
+               (frontServoR.anglePos == R_PUSH)  &&
+               (frontServoM.anglePos == M_MID)){
+                fServoTimeBegin = millis();
+                F_STATE = F_BELT;
+            }
+            break;
+        case(F_BELT):
+            frontServoL.reset();
+            frontServoR.reset();
+            frontServoM.reset();
+            digitalWrite(STBY_BELT, HIGH);
+            motorBelt.drive(B_ROLL_SPEED, FORWARD);          // Pull the puck up
+            fServoTimeBegin = millis();
+            F_STATE         = F_PULL;
+            break;
+        case(F_PULL):    if((millis() - fServoTimeBegin) >= F_PULL_LAPSE){
+
+                F_STATE = F_LIFT;
+                // READY TO MOVE //////////////////////////////////////
+            }
+            break;
+        case(F_LIFT):              // Puck is captured
+            motorBelt.mStop();
+            digitalWrite(STBY_BELT, LOW);
+            F_STATE    = 0;
+            servoCatch = 0;
+            // JOB FINISHED ///////////////////////////////////////
+            //}else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
+            // ERROR //////////////////////////////////////////////
+            //}
+    }
+}
+
+void catchMoveL(void){                  // Servo maneuver to catch the puck
+    if(frontServoL.anglePos > L_SAFE){
+        frontServoL.anglePos -= 1;
+        frontServoL.updatePos();
+        fServoTimeBegin = millis();
+    }else{
+        if(frontServoL.anglePos > L_PUSH){
+            frontServoL.anglePos -= 1;
+            frontServoL.updatePos();
+        }
+        if(frontServoR.anglePos < R_CLOSE){
+            frontServoR.anglePos += 1;
+            frontServoR.updatePos();
+        }
+        if(frontServoM.anglePos > M_MID){
+            frontServoM.anglePos -= 1;
+            frontServoM.updatePos();
+        }
+        fServoTimeBegin = millis();
+    }
+}
+
+void catchMoveR(void){
+    if(frontServoR.anglePos < R_SAFE){
+        frontServoR.anglePos += 1;
+        frontServoR.updatePos();
+        fServoTimeBegin = millis();
+    }else{
+        if(frontServoL.anglePos > L_CLOSE){
+            frontServoL.anglePos -= 1;
+            frontServoL.updatePos();
+        }
+        if(frontServoR.anglePos < R_PUSH){
+            frontServoR.anglePos += 1;
+            frontServoR.updatePos();
+        }
+        if(frontServoM.anglePos > M_MID){
+            frontServoM.anglePos -= 1;
+            frontServoM.updatePos();
+        }
+        fServoTimeBegin = millis();
+    }
+}
+
+void freePucks(void){
+    switch(B_STATE){
+        case(B_RELEASE): if((millis() - bServoTimeBegin) >= B_LAPSE){  // Open doors, gently
+                if(backServo.anglePos > B_OPEN){
+                    backServo.anglePos -= 1;
+                    backServo.updatePos();
+                    bServoTimeBegin = millis();
+                }else{
+                    B_STATE = B_ROLL;
+                }
+            }
+            break;
+        case(B_ROLL):    digitalWrite(STBY_GEAR, HIGH);
+            motorLeft.drive(40, FORWARD);          // drive forward to
+            motorRight.drive(40, BACKWARD);         // free the pucks
+            bServoTimeBegin = millis();
+            B_STATE         = B_ROLLING;
+            break;
+        case(B_ROLLING): if((millis() - bServoTimeBegin) >= B_ROLL_LAPSE){
+                bServoTimeBegin = 0;
+                B_STATE         = B_RECLOSE;
+            }
+            break;
+        case(B_RECLOSE): digitalWrite(STBY_GEAR, LOW);
+            motorLeft.mStop   ();                            // Close doors, finished
+            motorRight.mStop   ();
+            backServo.reset();
+            B_STATE           = 0;
+            servoReleasePucks = 0;
+        default: return;
+    }
+}
+
+void servoPrepare(int angle){      // Presets the middle-servo for the coming puck
+    frontServoM.writePos(angle);
 }
 
 /*
