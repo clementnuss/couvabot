@@ -22,7 +22,7 @@
 using namespace cv;
 using namespace std;
 
-bool initCam();
+void initCam();
 
 void capBlobs();
 

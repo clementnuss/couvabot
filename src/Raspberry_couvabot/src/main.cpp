@@ -24,10 +24,10 @@ HeartBeat *heartBeat;
 Mat img, hsv, filtered;
 vector<Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
 
-pthread_mutex_t mutexBlobs;
-bool endImgProc;
+pthread_mutex_t mutexBlobs, mutexCount;
+bool endImgProc, endLoop;
 
-unsigned int n;
+unsigned int acquiredFrames, processedFrames;
 unsigned startTime;
 
 int checkTime();
@@ -44,10 +44,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (!initCam()) {
-        cerr << "camera initialization error !!!";
-        return 1;
-    }
+    // Initialize SPI communications
 
     if (RPI) {
         try {
@@ -62,13 +59,17 @@ int main(int argc, char **argv) {
 
 
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
-    mvCtrl->arduiCommand({0, 0});    // TODO: solve arduino initialization bug to avoid this command
+    mvCtrl->arduiCommand({0, 0});
 
     heartBeat = new HeartBeat(spiCom);
 
-    startTime = millis();
-    n = 0;
+    // initialize the camera
+    initCam();
 
+
+    startTime = millis();
+    acquiredFrames = 0;
+    processedFrames = 0;
 
     int rc = 0;
     pthread_t threads[3];
@@ -90,7 +91,7 @@ int main(int argc, char **argv) {
     int tmp = 0;
     scanf("%d", &tmp);
     cout << "End of program after " << millis() - startTime << " [ms]\n";
-    cout << "number of processed frames n: " << n << "\n";
+    cout << "number of processed frames n: " << acquiredFrames << "\n";
     endImgProc = true;
 
     pthread_cancel(threads[0]); // End the image processing thread
@@ -116,7 +117,7 @@ void *loop(void *threadArgs) {
 
     while (checkTime() != 1) {
 
-        if (n > procN) {    // New processed image
+        if (acquiredFrames > procN) {    // New processed image
 
             // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
             pthread_mutex_lock(&mutexBlobs);
@@ -231,7 +232,7 @@ void *imgProc(void *threadArgs) {
         // unlock variables
         pthread_mutex_unlock(&mutexBlobs);
 
-        n++;
+        acquiredFrames++;
 
         if (CALIB)
             waitKey(30);
@@ -261,10 +262,9 @@ void capImage() {
     cvtColor(img, hsv, COLOR_BGR2HSV);
 }
 
-bool initCam() {
+void initCam() {
     if (RPI)
         cam = new WebCam();
     else
         cam = new WebCam();
-    return true;
 }

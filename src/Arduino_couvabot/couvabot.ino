@@ -1,5 +1,6 @@
 #include "couvabot.h"
-#include <Servo.h>
+#define ARDUINO_ARCH_AVR
+#include "../Servo/Servo.h"
 
 /***************************************************************
  Global Variables

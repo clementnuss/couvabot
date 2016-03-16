@@ -44,7 +44,7 @@ WebCam::WebCam() {
 
     cap.open(0);
 
-    if (!cap.isOpened())  // if not success, exit program
+    if (!cap.isOpened())  // no success --> exit program
     {
         cerr << "Cannot open the web cam\n";
     }
