@@ -24,7 +24,7 @@ Trajectory trajectory;
 SPICom *spiCom;
 HeartBeat *heartBeat;
 Mat img, hsv, filtered;
-vector <Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
+vector<Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
 
 pthread_mutex_t mutexBlobs, mutexCount;
 bool endImgProc, loopStart;
@@ -150,7 +150,7 @@ void *loop(void *threadArgs) {
         cout << "Loop thread started !\n";
     }
 
-    int acqFrames = 0;
+    unsigned int acqFrames = 0;
 
     int const bufferSize = 5;
     Blob blobsBuffer[bufferSize];
@@ -164,7 +164,7 @@ void *loop(void *threadArgs) {
         acqFrames = acquiredFrames;
         pthread_mutex_unlock(&mutexCount);
 
-        if (acquiredFrames > processedFrames) {    // New processed image
+        if (acqFrames > processedFrames) {    // New processed image
 
             // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
             pthread_mutex_lock(&mutexBlobs);
@@ -208,11 +208,11 @@ void *loop(void *threadArgs) {
                 continue;
             }
 
-            cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
-            " ,aire " << target->getArea() << "et couleur " << target->getColour() << "\n";
-
             target = &blobsBuffer[i];
 
+
+            cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
+            " ,aire " << target->getArea() << " et couleur " << target->getColour() << "\n";
 
             double dTarget = project(target->getPosX(), target->getPosY());
             double speed = 0;
@@ -239,7 +239,7 @@ void *loop(void *threadArgs) {
 
             mvCtrl->gearsCommand(getParams(target->getPosX(), target->getPosY(), speed));
 
-            processedFrames++;
+            processedFrames = acqFrames + 1;
 
 
             cout << "Number of processed frames : " << processedFrames << "\n";
@@ -248,9 +248,11 @@ void *loop(void *threadArgs) {
 
     }
 
+#if RPI
     if (heartBeat->pingArduino()) {
         cout << "Arduino feedback received\n";
     }
+#endif
 
     cout << "Loop thread cleanly closed\n";
 
@@ -322,12 +324,13 @@ void *imgProc(void *threadArgs) {
         // unlock variables
         pthread_mutex_unlock(&mutexBlobs);
 
+        // lock & unlock the counter
         pthread_mutex_lock(&mutexCount);
         acquiredFrames++;
         pthread_mutex_unlock(&mutexCount);
 
         if (CALIB)
-            waitKey(30);
+            waitKey(50);
     }
 
     cout << "Image processing thread cleanly closed\n";
