@@ -12,9 +12,9 @@
 
 uint8_t receiveBuffer[5];
 uint8_t dat;
-byte marker     = 0;
+byte marker = 0;
 byte sendMarker = 0;
-bool dataWaiting;
+bool sendingData;
 
 int timeout = 0;
 uint8_t state[2];
@@ -22,26 +22,25 @@ uint8_t state[2];
 // MOTORS
 Motor motorLeft(AIN1_GEAR, AIN2_GEAR, PWMA_GEAR);
 Motor motorRight(BIN1_GEAR, BIN2_GEAR, PWMB_GEAR);
-Motor motorBelt (AIN1_BELT, AIN2_BELT, PWM_BELT);
-volatile unsigned int rotTimeBegin = 0;
-volatile unsigned int rotTimeEnd = 0;
+Motor motorBelt(AIN1_BELT, AIN2_BELT, PWM_BELT);
 
 // SERVOS
-ServoM frontServoL (L_OPEN);                        // Object declaration
-ServoM frontServoR (R_OPEN);
-ServoM frontServoM (M_MID);
-ServoM backServo   (B_CLOSE);
-bool                   servoReleasePucks = 0;
-bool                   servoCatch        = 0;
-volatile int           B_STATE           = 0;
-volatile int           F_STATE           = 0;
-volatile unsigned long bServoTimeBegin   = 0;
-volatile unsigned long fServoTimeBegin   = 0;
+ServoM frontServoL(L_OPEN);                        // Object declaration
+ServoM frontServoR(R_OPEN);
+ServoM frontServoM(M_MID);
+ServoM backServoL(B_CLOSE);
+ServoM backServoR(B_CLOSE);
+
+bool servoReleasePucks = 0;
+bool servoCatch = 0;
+volatile int B_STATE = 0;
+volatile int F_STATE = 0;
+volatile unsigned long bServoTimeBegin = 0;
+volatile unsigned long fServoTimeBegin = 0;
 
 // SENSORS
-bool startLoop = 0;
+bool startLoop = false;
 int startSignal = 0;
-
 
 void setup() {
     pinMode(MISO, OUTPUT);
@@ -49,17 +48,19 @@ void setup() {
     initSPI(); // Initialize SPDR to 'h' -- heartbeat char, default char on SPDR.
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
-    pinMode(STBY_BELT,    OUTPUT);
+    pinMode(STBY_BELT, OUTPUT);
 
-    frontServoL.Attach (SERVO_FRONT_L);  // Servo setup
-    frontServoM.Attach (SERVO_FRONT_M);
-    frontServoR.Attach (SERVO_FRONT_R);
-    backServo.Attach   (SERVO_BACK_R);
+    frontServoL.Attach(SERVO_FRONT_L);  // Servo setup
+    frontServoM.Attach(SERVO_FRONT_M);
+    frontServoR.Attach(SERVO_FRONT_R);
+    backServoL.Attach(SERVO_BACK_L);
+    backServoR.Attach(SERVO_BACK_R);
 
-    frontServoL.reset ();
-    frontServoR.reset ();
-    frontServoM.reset ();
-    backServo.reset   ();
+    frontServoL.reset();
+    frontServoR.reset();
+    frontServoM.reset();
+    backServoL.reset();
+    backServoR.reset();
 }
 
 void loop() {
@@ -67,16 +68,18 @@ void loop() {
         spiHandler();
     }
 
-    if (startLoop){
+    if (startLoop) {
         startSignal = 0;
-        for (int k = 0; k<10; k++){
-            startSignal = startSignal + analogRead(A1);
+        for (int k = 0; k < 10; k++) {
+            startSignal += analogRead(A3) + analogRead(A4);
         }
-        startSignal = startSignal/10;
-        if(startSignal < 800){
-            dataWaiting = 1;
-            startLoop = 0;
-            //  TODO: sendData
+        startSignal = startSignal / 20;
+        if (startSignal < 800) {
+            sendingData = 1;
+            startLoop = false;
+            SPDR = 's'; // start
+        } else {
+            SPDR = 'w'; // wait
         }
     }
 
@@ -90,21 +93,20 @@ void spiHandler() {
     switch (marker) {
         case 0:
             if (SPDR == 'H') {
-                //TODO: move to initSPI()
-                if (dataWaiting) {
-                    marker = 7;
-                    sendData();
-                }
-                else {
-                    SPDR = 'a'; // Acknowledges spi communication start
-                    marker++;
-                }
+                SPDR = 'a'; // Acknowledges spi communication start
+                marker++;
+            } else if (SPDR == 'D') {       //When the raspberry asks for Data, the arduino serves it
+                marker = 10;
+                sendData();
+            } else if (SPDR == 'S'){
+                startLoop = true;
+                initSPI();
             } else
                 initSPI();
             break;
         case 6:
             initSPI();      //Resets SPI communication stack
-        case 7:
+        case 10:
             sendData();
             break;
         default:
@@ -117,13 +119,15 @@ void spiHandler() {
 void sendData() {
     switch (sendMarker) {
         case 0:
-            SPDR = 'd';
+            //SPDR = analogRead();
             sendMarker++;
             break;
         case 1:
-            if (SPDR == 'D'){
+            if (SPDR == 'D') {
 
             }
+        default:
+            initSPI();
     }
 
 }
@@ -134,6 +138,7 @@ void initSPI() {
         receiveBuffer[i] = 0;
     }
     marker = 0;
+    sendMarker = 0;
 }
 
 void commandDecoder() {
@@ -171,9 +176,9 @@ void commandDecoder() {
             initSPI();
             servoPrepare(M_RIGHT);
             break;
-        case 'k':
-            marker = 0;           // Catch the puck
-            servoCatch = 1;
+        case 'C':
+            servoCatch = 1;         // Catch the puck
+            initSPI();
             break;
         case 'f':
             marker = 0;           // Release all pucks
@@ -269,49 +274,50 @@ void motorDecoder() {
             */
 }
 
-void catchPuck(void){
-    switch(F_STATE){
-        case(F_CATCH_L):
-            if((millis() - fServoTimeBegin) >= F_LAPSE){  // Catch a puck
+void catchPuck(void) {
+    switch (F_STATE) {
+        case (F_CATCH_L):
+            if ((millis() - fServoTimeBegin) >= F_LAPSE) {  // Catch a puck
                 catchMoveL();
             }
-            if((frontServoL.anglePos == L_PUSH)  &&
-               (frontServoR.anglePos == R_CLOSE) &&
-               (frontServoM.anglePos == M_MID)){
+            if ((frontServoL.anglePos == L_PUSH) &&
+                (frontServoR.anglePos == R_CLOSE) &&
+                (frontServoM.anglePos == M_MID)) {
                 F_STATE = F_BELT;
                 fServoTimeBegin = 0;
             }
             break;
-        case(F_CATCH_R):
-            if((millis() - fServoTimeBegin) >= F_LAPSE){
-            catchMoveR();
+        case (F_CATCH_R):
+            if ((millis() - fServoTimeBegin) >= F_LAPSE) {
+                catchMoveR();
             }
-            if((frontServoL.anglePos == L_CLOSE) &&
-               (frontServoR.anglePos == R_PUSH)  &&
-               (frontServoM.anglePos == M_MID)){
+            if ((frontServoL.anglePos == L_CLOSE) &&
+                (frontServoR.anglePos == R_PUSH) &&
+                (frontServoM.anglePos == M_MID)) {
                 fServoTimeBegin = millis();
                 F_STATE = F_BELT;
             }
             break;
-        case(F_BELT):
+        case (F_BELT):
             frontServoL.reset();
             frontServoR.reset();
             frontServoM.reset();
             digitalWrite(STBY_BELT, HIGH);
             motorBelt.drive(B_ROLL_SPEED, FORWARD);          // Pull the puck up
             fServoTimeBegin = millis();
-            F_STATE         = F_PULL;
+            F_STATE = F_PULL;
             break;
-        case(F_PULL):    if((millis() - fServoTimeBegin) >= F_PULL_LAPSE){
+        case (F_PULL):
+            if ((millis() - fServoTimeBegin) >= F_PULL_LAPSE) {
 
                 F_STATE = F_LIFT;
                 // READY TO MOVE //////////////////////////////////////
             }
             break;
-        case(F_LIFT):              // Puck is captured
+        case (F_LIFT):              // Puck is captured
             motorBelt.mStop();
             digitalWrite(STBY_BELT, LOW);
-            F_STATE    = 0;
+            F_STATE = 0;
             servoCatch = 0;
             // JOB FINISHED ///////////////////////////////////////
             //}else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
@@ -320,21 +326,21 @@ void catchPuck(void){
     }
 }
 
-void catchMoveL(void){                  // Servo maneuver to catch the puck
-    if(frontServoL.anglePos > L_SAFE){
+void catchMoveL(void) {                  // Servo maneuver to catch the puck
+    if (frontServoL.anglePos > L_SAFE) {
         frontServoL.anglePos -= 1;
         frontServoL.updatePos();
         fServoTimeBegin = millis();
-    }else{
-        if(frontServoL.anglePos > L_PUSH){
+    } else {
+        if (frontServoL.anglePos > L_PUSH) {
             frontServoL.anglePos -= 1;
             frontServoL.updatePos();
         }
-        if(frontServoR.anglePos < R_CLOSE){
+        if (frontServoR.anglePos < R_CLOSE) {
             frontServoR.anglePos += 1;
             frontServoR.updatePos();
         }
-        if(frontServoM.anglePos > M_MID){
+        if (frontServoM.anglePos > M_MID) {
             frontServoM.anglePos -= 1;
             frontServoM.updatePos();
         }
@@ -342,21 +348,21 @@ void catchMoveL(void){                  // Servo maneuver to catch the puck
     }
 }
 
-void catchMoveR(void){
-    if(frontServoR.anglePos < R_SAFE){
+void catchMoveR(void) {
+    if (frontServoR.anglePos < R_SAFE) {
         frontServoR.anglePos += 1;
         frontServoR.updatePos();
         fServoTimeBegin = millis();
-    }else{
-        if(frontServoL.anglePos > L_CLOSE){
+    } else {
+        if (frontServoL.anglePos > L_CLOSE) {
             frontServoL.anglePos -= 1;
             frontServoL.updatePos();
         }
-        if(frontServoR.anglePos < R_PUSH){
+        if (frontServoR.anglePos < R_PUSH) {
             frontServoR.anglePos += 1;
             frontServoR.updatePos();
         }
-        if(frontServoM.anglePos > M_MID){
+        if (frontServoM.anglePos > M_MID) {
             frontServoM.anglePos -= 1;
             frontServoM.updatePos();
         }
@@ -364,59 +370,45 @@ void catchMoveR(void){
     }
 }
 
-void freePucks(void){
-    switch(B_STATE){
-        case(B_RELEASE): if((millis() - bServoTimeBegin) >= B_LAPSE){  // Open doors, gently
-                if(backServo.anglePos > B_OPEN){
-                    backServo.anglePos -= 1;
-                    backServo.updatePos();
+void freePucks(void) {
+    switch (B_STATE) {
+        case (B_RELEASE):
+            if ((millis() - bServoTimeBegin) >= B_LAPSE) {  // Open doors, gently
+                if (backServoL.anglePos > B_OPEN) {
+                    backServoL.anglePos -= 1;
+                    backServoL.updatePos();
                     bServoTimeBegin = millis();
-                }else{
+                } else {
                     B_STATE = B_ROLL;
                 }
             }
             break;
-        case(B_ROLL):    digitalWrite(STBY_GEAR, HIGH);
+        case (B_ROLL):
+            digitalWrite(STBY_GEAR, HIGH);
             motorLeft.drive(40, FORWARD);          // drive forward to
             motorRight.drive(40, BACKWARD);         // free the pucks
             bServoTimeBegin = millis();
-            B_STATE         = B_ROLLING;
+            B_STATE = B_ROLLING;
             break;
-        case(B_ROLLING): if((millis() - bServoTimeBegin) >= B_ROLL_LAPSE){
+        case (B_ROLLING):
+            if ((millis() - bServoTimeBegin) >= B_ROLL_LAPSE) {
                 bServoTimeBegin = 0;
-                B_STATE         = B_RECLOSE;
+                B_STATE = B_RECLOSE;
             }
             break;
-        case(B_RECLOSE): digitalWrite(STBY_GEAR, LOW);
-            motorLeft.mStop   ();                            // Close doors, finished
-            motorRight.mStop   ();
-            backServo.reset();
-            B_STATE           = 0;
+        case (B_RECLOSE):
+            digitalWrite(STBY_GEAR, LOW);
+            motorLeft.mStop();                            // Close doors, finished
+            motorRight.mStop();
+            backServoL.reset();
+            backServoR.reset();
+            B_STATE = 0;
             servoReleasePucks = 0;
-        default: return;
+        default:
+            return;
     }
 }
 
-void servoPrepare(int angle){      // Presets the middle-servo for the coming puck
+void servoPrepare(int angle) {      // Presets the middle-servo for the coming puck
     frontServoM.writePos(angle);
 }
-
-/*
-// SPI interrupt routine
-ISR (SPI_STC_vect)
-{
-    byte c = SPDR;  // grab byte from SPI Data Register
-
-    // add to buffer if room
-    if (pos < sizeof buf)
-    {
-        buf [pos++] = c;
-
-        // example: newline means time to process buffer
-        if (c == '\n')
-            process_it = true;
-
-    }  // end of room available
-}  // end of interrupt routine SPI_STC_vect
-
-*/
