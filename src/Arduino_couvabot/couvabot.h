@@ -77,16 +77,9 @@
 #define SERVO_FRONT_R   2
 #define SERVO_BACK_R    4
 #define SERVO_BACK_L    6
-//-------------------------------------------------------
 
-typedef struct IR_SENSOR IR_SENSOR;
-struct IR_SENSOR{
-    char pin1;
-    char pin2;
-    unsigned int value;
-};
-
-
+// IR sensors
+#define MAX_IR_SENSOR_VALUE 1023.
 
 // Function declaration ----------------------------------
 int angleConvert(int rotAngle, int rotSpeed);
@@ -112,5 +105,7 @@ void catchMoveR(void);
 void freePucks(void);
 
 void servoPrepare(int angle);
+
+void get_ir_sensors();
 
 #endif //ARDUINO_COUVABOT_COUVABOT_H

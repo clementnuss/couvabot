@@ -41,7 +41,7 @@ volatile unsigned long fServoTimeBegin   = 0;
 // SENSORS
 bool startLoop = 0;
 int startSignal = 0;
-
+uint8_t ir_sensor[8];
 
 void setup() {
     pinMode(MISO, OUTPUT);
@@ -400,6 +400,19 @@ void freePucks(void){
 void servoPrepare(int angle){      // Presets the middle-servo for the coming puck
     frontServoM.writePos(angle);
 }
+
+void get_ir_sensors() {
+  int sensor[8]; // raw data [0; 1023]
+
+  // Read sensors
+  for (i = 0; i < 8; i++) {
+    sensor[i] = analogRead(i);
+    sensor[i] *= (255./MAX_IR_SENSOR_VALUE);
+    ir_sensor = floor(sensor[i]);
+  }
+
+}
+
 
 /*
 // SPI interrupt routine

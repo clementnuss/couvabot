@@ -64,8 +64,8 @@ void braiten(int wheel_speed[2]) {
   }
 
   // Update wheel speeds
-  wheel_speed[0] = (int) floor(left_speed);
-  wheel_speed[1] = (int) floor(right_speed);
+  wheel_speed[0] = left_speed;
+  wheel_speed[1] = right_speed;
 
 
   /* Set speed - braiten function could set speed by itself, dunno what is best.
