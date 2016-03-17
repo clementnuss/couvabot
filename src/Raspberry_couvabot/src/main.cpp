@@ -39,9 +39,9 @@ int main(int argc, char **argv) {
     hsvBoundsRed.hMin = 0;
     hsvBoundsRed.hMax = 11;
     hsvBoundsRed.sMin = 119;
-    hsvBoundsRed.sMax = 204;
-    hsvBoundsRed.vMin = 79;
-    hsvBoundsRed.vMax = 121;
+    hsvBoundsRed.sMax = 166;
+    hsvBoundsRed.vMin = 144;
+    hsvBoundsRed.vMax = 192;
 
     hsvBoundsGreen.hMin = 0;
     hsvBoundsGreen.hMax = 0;
@@ -61,13 +61,12 @@ int main(int argc, char **argv) {
     }
 
     // Initialize SPI communications
-
     if (RPI) {
         try {
             //first clock divider for Arduino, second for 2nd SPI peripheral
             spiCom = new SPICom(BCM2835_SPI_CLOCK_DIVIDER_128, BCM2835_SPI_CLOCK_DIVIDER_65536);
         } catch (string exception) {
-            cerr << "Caught exception : " << exception;
+            cerr << "Caught exception : " << exception << "\n";
         }
     }
 
@@ -79,19 +78,15 @@ int main(int argc, char **argv) {
     mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
     mvCtrl->gearsCommand({0, 0});
 
-    /*
-    mvCtrl->gearsCommand({0.5, 0.5});
-    usleep(5000000); // wait 500 [ms] to make sure the loop thread has stopped
-    mvCtrl->gearsCommand({0, 0});
-    */
-
-
     heartBeat = new HeartBeat(spiCom);
 
     // initialize the camera
     initCam();
+    usleep(500000);
 
-    loopStart = false;
+    mvCtrl->gearsCommand({.9, 1.});
+    usleep(60000000);
+
 
     int rc = 0;
     pthread_t threads[3];
@@ -101,23 +96,16 @@ int main(int argc, char **argv) {
         exit(-1);
     } else
         cout << "imgProcessing thread launched\n";
-
-    rc = pthread_create(&threads[1], NULL, loop, (void *) -1);
-    if (rc) {
-        cout << "Error:unable to create thread," << rc << endl;
-        exit(-1);
-    } else
-        cout << "loop thread launched\n";
-
-    usleep(500000); // wait 500 [ms] to make sure the loop thread has stopped
+    usleep(500000); // wait 500 [ms] to make sure the imgProcessing thread has stopped
 
     loopStart = true;
-    rc = pthread_create(&threads[1], NULL, loop, (void *) -1);
+    rc = pthread_create(&threads[1], NULL, loop, NULL);
     if (rc) {
         cout << "Error:unable to create thread," << rc << endl;
         exit(-1);
     } else
         cout << "loop thread launched\n";
+    usleep(500000); // wait 500 [ms] to sure the loop thread has stopped
 
     int tmp = 0;
     scanf("%d", &tmp);
@@ -143,16 +131,18 @@ void *loop(void *threadArgs) {
 
     int const middleX = FRAME_WIDTH / 2;
 
-    if (!loopStart) {
-        cout << "Loop thread called and startLoop is false .. exiting\n";
-        pthread_exit(NULL);
-    } else {
-        cout << "Loop thread started !\n";
+    while (heartBeat->start() != 1){
+        // Waiting the start signal
     }
+
+    cout << "Start signal received !\n";
+    startTime = millis();
+
+    gearsPower gearsSpeeds({0,0});
 
     unsigned int acqFrames = 0;
 
-    int const bufferSize = 5;
+    int const bufferSize = 10;
     Blob blobsBuffer[bufferSize];
     for (int i = 0; i < bufferSize; ++i) {
         blobsBuffer[i] = Blob(0, 0, -1, 0);
@@ -165,6 +155,8 @@ void *loop(void *threadArgs) {
         pthread_mutex_unlock(&mutexCount);
 
         if (acqFrames > processedFrames) {    // New processed image
+
+            processedFrames = acqFrames;
 
             // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
             pthread_mutex_lock(&mutexBlobs);
@@ -203,8 +195,8 @@ void *loop(void *threadArgs) {
             }
 
             if (!targetFound) {
-                mvCtrl->gearsCommand({0, 0});
-                cout << "No target found\n";
+                //mvCtrl->gearsCommand({0, 0});
+                //cout << "No target found\n";
                 continue;
             }
 
@@ -237,22 +229,15 @@ void *loop(void *threadArgs) {
                 mvCtrl->catchPuck();
             }
 
-            mvCtrl->gearsCommand(getParams(target->getPosX(), target->getPosY(), speed));
 
-            processedFrames = acqFrames + 1;
-
+            gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
 
             cout << "Number of processed frames : " << processedFrames << "\n";
         }
 
 
-    }
 
-#if RPI
-    if (heartBeat->pingArduino()) {
-        cout << "Arduino feedback received\n";
     }
-#endif
 
     cout << "Loop thread cleanly closed\n";
 
@@ -260,7 +245,7 @@ void *loop(void *threadArgs) {
 }
 
 int checkTime() {
-    return (millis() - startTime) > 105000;
+    return (millis() - startTime) > 60 * 1000;
 }
 
 void *imgProc(void *threadArgs) {
@@ -342,7 +327,6 @@ void capBlobs() {
 
     imgProcess(hsvBoundsRed, hsv, filtered);
     detectObjects(redBlobs, filtered, RED);
-    cout << "Red blobs size: " << redBlobs.size() << "\n";
     if (CALIB)
         imshow("Red filtered", filtered);
 

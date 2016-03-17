@@ -7,5 +7,5 @@
 
 #include "Trajectory.h"
 
-gearsPower getParams(int x, int y, double speed);
+gearsPower getDiffParams(int x, int y, double speed);
 #endif //COUVABOT_DIFFERENTIALDRIVE_H

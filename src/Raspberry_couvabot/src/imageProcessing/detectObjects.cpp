@@ -45,7 +45,6 @@ bool detectObjects(vector<Blob> &blobs, Mat binaryImage, int colour) {
                 int y = (int) (mom.m01 / area);    //m01
                 Blob tmpBlob(x, y, area, colour);
                 blobs.push_back(tmpBlob);
-                cout << "Added a blob\n";
             }
         }
         return true;
