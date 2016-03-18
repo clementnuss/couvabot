@@ -23,8 +23,10 @@
 #define ROT_R       5
 
 // SERVO MANEUVERS
-#define B_CLOSE         90
-#define B_OPEN          10
+#define B_L_CLOSE       90
+#define B_R_CLOSE       90
+#define B_L_OPEN        160
+#define B_R_OPEN        20
 #define B_LAPSE         10
 #define B_ROLL_LAPSE    1000
 #define B_ROLL_SPEED    110

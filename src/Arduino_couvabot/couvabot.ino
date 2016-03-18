@@ -28,8 +28,8 @@ Motor motorBelt(AIN1_BELT, AIN2_BELT, PWM_BELT);
 ServoM frontServoL(L_OPEN);                        // Object declaration
 ServoM frontServoR(R_OPEN);
 ServoM frontServoM(M_MID);
-ServoM backServoL(B_CLOSE);
-ServoM backServoR(B_CLOSE);
+ServoM backServoL(B_L_CLOSE);
+ServoM backServoR(B_R_CLOSE);
 
 bool servoReleasePucks = 0;
 bool servoCatch = 0;
@@ -315,9 +315,8 @@ void catchPuck(void) {
             break;
         case (F_PULL):
             if ((millis() - fServoTimeBegin) >= F_PULL_LAPSE) {
-
                 F_STATE = F_LIFT;
-                // READY TO MOVE //////////////////////////////////////
+                //TODO: READY TO MOVE //////////////////////////////////////
             }
             break;
         case (F_LIFT):              // Puck is captured
@@ -325,9 +324,9 @@ void catchPuck(void) {
             digitalWrite(STBY_BELT, LOW);
             F_STATE = 0;
             servoCatch = 0;
-            // JOB FINISHED ///////////////////////////////////////
+            //TODO: JOB FINISHED ///////////////////////////////////////
             //}else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
-            // ERROR //////////////////////////////////////////////
+            //TODO: ERROR //////////////////////////////////////////////
             //}
     }
 }
@@ -380,9 +379,14 @@ void freePucks(void) {
     switch (B_STATE) {
         case (B_RELEASE):
             if ((millis() - bServoTimeBegin) >= B_LAPSE) {  // Open doors, gently
-                if (backServoL.anglePos > B_OPEN) {
-                    backServoL.anglePos -= 1;
-                    backServoL.updatePos();
+                if ((backServoL.anglePos < B_L_OPEN) || (backServoR.anglePos > B_R_OPEN)){
+                    if (backServoL.anglePos < B_L_OPEN){
+                        backServoL.anglePos += 1;
+                        backServoL.updatePos();}
+                    if (backServoR.anglePos > B_R_OPEN){
+                        backServoR.anglePos -= 1;
+                        backServoR.updatePos();
+                    }
                     bServoTimeBegin = millis();
                 } else {
                     B_STATE = B_ROLL;
