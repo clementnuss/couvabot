@@ -44,26 +44,19 @@ arduinoData HeartBeat::getData() {
 
 int HeartBeat::start() {
 
-    if ((millis() - time) < 10)    // Check the arduino every 10 ms in start mode.
+    if ((millis() - time) < 100)    // Check the arduino every 10 ms in start mode.
         return 0;
     else
         time = millis();
 
-    readData = spiCom->CS0_transfer('H');
-    switch (readData) {
-        case 'h':
-            return 0;
-        case 'd':
-            break;
-        default:
-            cout << "HeartBeat when Arduino is not ready\n";
-    }
+    readData = spiCom->CS0_transfer('S');
+    if (readData != 'h')
+        cout << "Polled Arduino when not ready\n";
 
-    readData = spiCom->CS0_transfer('D'); // Acknowledge data transmit mode
+    readData = spiCom->CS0_transfer('E');   // EOT
+
     if (readData == 's')    // if there is an 's', we start !
         return 1;
-
-    readData = spiCom->CS0_transfer('E'); // End transmission
-
-    return 0;
+    else
+        return 0;
 }

@@ -8,7 +8,7 @@
 int const middleX = FRAME_WIDTH / 2;
 double const diffCoeff = 0.15;
 
-gearsPower getParams(int x, int y, double speed) {
+gearsPower getDiffParams(int x, int y, double speed) {
 
     bool left = false;
 

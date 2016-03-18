@@ -14,7 +14,7 @@ using namespace cv;
 #include "detectObjects.h"
 
 //Minimum/maximum detection settings
-const int MIN_AREA = 18 * 18;
+const int MIN_AREA = 10 * 10;
 const int MAX_AREA = 500;
 const int MAX_NUM_OBJECTS = 30;
 
@@ -22,29 +22,29 @@ const int MAX_NUM_OBJECTS = 30;
 bool detectObjects(vector<Blob> &blobs, Mat binaryImage, int colour) {
 
     vector<vector<Point>> contours; //Stores the contours as a succession of Points
-    contours.reserve(30);
+    contours.reserve(MAX_NUM_OBJECTS);
 
     Mat tmp;
     binaryImage.copyTo(tmp);
 
     findContours(tmp, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 
+    blobs.clear();
+
     if (contours.size() > 0 && contours.size() < MAX_NUM_OBJECTS) {
         blobs.reserve(contours.size());
 
         for (int i = 0; i < contours.size(); ++i) {
 
-            int moments[3];
-            momentsOfOrder1((Mat) contours[i], moments);
+            Moments mom(cv::moments((Mat) contours[i], false));
 
-            int area = moments[0];      //m00
+            int area = (int) mom.m00;      //m00
 
             if (area > MIN_AREA && area < MAX_AREA) {
-                int x = (moments[1] / area);    //m10
-                int y = (moments[2] / area);    //m01
+                int x = (int) (mom.m10 / area);    //m10
+                int y = (int) (mom.m01 / area);    //m01
                 Blob tmpBlob(x, y, area, colour);
                 blobs.push_back(tmpBlob);
-                cout << "Added a blob\n";
             }
         }
         return true;
@@ -77,7 +77,7 @@ void createTrackbars(HSVbounds &bounds, string winName) {
 bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, RotatedRect &board) {
 
     vector<vector<Point>> contours; //Stores the contours as a succession of Points
-    contours.reserve(5);
+    contours.reserve(10);
 
     Mat tmp;
     binaryImage.copyTo(tmp);
@@ -89,10 +89,10 @@ bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, RotatedRect &board) {
     if (contours.size() > 0 && contours.size() < 40) {
         for (int i = 0; i < contours.size(); ++i) {
 
-            int moments[3];
-            momentsOfOrder1((Mat) contours[i], moments);
-            if (moments[0] > area) {
-                area = moments[0];
+            Moments mom = moments(contours[i], false);
+
+            if (mom.m00 > area) {
+                area = (int) mom.m00;
                 biggest = i;
             }
         }
@@ -125,37 +125,6 @@ void imgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered) {
     dilate(filtered, filtered, dilateElement);
     dilate(filtered, filtered, dilateElement);
 }
-
-void momentsOfOrder1(const cv::Mat &img, int *moments) {
-    cv::Size size = img.size();
-    int x, y;
-    int mom[3] = {0, 0, 0};
-
-    for (y = 0; y < size.height; y++) {
-        const int *ptr = (const int *) (img.data + y * img.step);
-        int x0 = 0, x1 = 0;
-
-        for (x = 0; x < size.width; x++) {
-            int p = ptr[x];
-            int xp = x * p, xxp;
-
-            x0 += p;
-            x1 += xp;
-        }
-
-        int py = y * x0;
-
-        mom[2] += py;             // m01
-        mom[1] += x1;             // m10
-        mom[0] += x0;             // m00
-
-
-        for (int i = 0; i < 3; ++i) {
-            moments[i] = mom[0];
-        }
-    }
-}
-
 
 /** decide whether point p is in the ROI.
 *** The ROI is a rotated rectange whose 4 corners are stored in roi[]

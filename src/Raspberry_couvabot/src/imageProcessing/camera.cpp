@@ -69,7 +69,7 @@ void GenericCam::read(cv::Mat &image) {
  */
 
 double project(int x, int y) {
-    double normPixel = y / 240.;
+    double normPixel = (240 -y) / 240.;
 
     double dist = x_5 * pow(normPixel, 5) +
                   x_4 * pow(normPixel, 4) +
