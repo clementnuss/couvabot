@@ -174,18 +174,21 @@ void commandDecoder() {
         case 'L':
             initSPI();
             servoPrepare(M_LEFT);
+            F_STATE = F_CATCH_L;
             break;
         case 'R':
             initSPI();
             servoPrepare(M_RIGHT);
+            F_STATE = F_CATCH_R;
             break;
         case 'C':
             servoCatch = 1;         // Catch the puck
             initSPI();
             break;
         case 'f':
-            marker = 0;           // Release all pucks
-            servoReleasePucks = 1;
+            servoReleasePucks = 1;      // Release all pucks
+            B_STATE = B_RELEASE;
+            initSPI();
             break;
 
         default:
