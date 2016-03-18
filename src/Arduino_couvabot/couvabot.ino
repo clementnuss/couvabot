@@ -25,11 +25,11 @@ Motor motorRight(BIN1_GEAR, BIN2_GEAR, PWMB_GEAR);
 Motor motorBelt(AIN1_BELT, AIN2_BELT, PWM_BELT);
 
 // SERVOS
-ServoM frontServoL(L_OPEN);                        // Object declaration
-ServoM frontServoR(R_OPEN);
-ServoM frontServoM(M_MID);
-ServoM backServoL(B_L_CLOSE);
-ServoM backServoR(B_R_CLOSE);
+ServoM frontServoL(L_WAIT, L_OPEN);                        // Object declaration
+ServoM frontServoR(R_WAIT, R_OPEN);
+ServoM frontServoM(M_WAIT, M_MID);
+ServoM backServoL(B_L_CLOSE, B_L_CLOSE);
+ServoM backServoR(B_R_CLOSE, B_R_CLOSE);
 
 bool servoReleasePucks = 0;
 bool servoCatch = 0;
@@ -50,8 +50,8 @@ void setup() {
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
     pinMode(STBY_BELT, OUTPUT);
-    pinMode(38, OUTPUT);
-    digitalWrite(38, 0);
+    pinMode(IR_ENABLE, OUTPUT);
+    digitalWrite(IR_ENABLE, HIGH);
 
     frontServoL.Attach(SERVO_FRONT_L);  // Servo setup
     frontServoM.Attach(SERVO_FRONT_M);
@@ -75,6 +75,7 @@ void loop() {
         startSignal = 0;
         for (int k = 0; k < 10; k++) {
             startSignal += analogRead(A3) + analogRead(A4);
+            //TODO: Choisir la LED de départ
         }
         startSignal = startSignal / 20;
         if (startSignal < 800) {
@@ -286,8 +287,8 @@ void catchPuck(void) {
             if ((millis() - fServoTimeBegin) >= F_LAPSE) {  // Catch a puck
                 catchMoveL();
             }
-            if ((frontServoL.anglePos == L_PUSH) &&
-                (frontServoR.anglePos == R_CLOSE) &&
+            if ((frontServoL.anglePos == L_CLOSE) &&
+                (frontServoR.anglePos == R_PUSH) &&
                 (frontServoM.anglePos == M_MID)) {
                 F_STATE = F_BELT;
                 fServoTimeBegin = 0;
@@ -297,41 +298,44 @@ void catchPuck(void) {
             if ((millis() - fServoTimeBegin) >= F_LAPSE) {
                 catchMoveR();
             }
-            if ((frontServoL.anglePos == L_CLOSE) &&
-                (frontServoR.anglePos == R_PUSH) &&
+            if ((frontServoL.anglePos == L_PUSH) &&
+                (frontServoR.anglePos == R_CLOSE) &&
                 (frontServoM.anglePos == M_MID)) {
-                fServoTimeBegin = millis();
+                fServoTimeBegin = 0;
                 F_STATE = F_BELT;
             }
             break;
         case (F_BELT):
-            frontServoL.reset();
-            frontServoR.reset();
-            frontServoM.reset();
+            frontServoL.openCatch();
+            frontServoR.openCatch();
+            frontServoM.openCatch();
             digitalWrite(STBY_BELT, HIGH);
-            motorBelt.drive(B_ROLL_SPEED, FORWARD);          // Pull the puck up
+            motorBelt.drive(F_ROLL_SPEED, FORWARD);          // Pull the puck up
             fServoTimeBegin = millis();
             F_STATE = F_PULL;
             break;
         case (F_PULL):
             if ((millis() - fServoTimeBegin) >= F_PULL_LAPSE) {
                 F_STATE = F_LIFT;
-                //TODO: READY TO MOVE //////////////////////////////////////
+                //TODO: READY TO MOVE
             }
             break;
         case (F_LIFT):              // Puck is captured
             motorBelt.mStop();
             digitalWrite(STBY_BELT, LOW);
+            frontServoL.reset();
+            frontServoR.reset();
+            frontServoM.reset();
             F_STATE = 0;
             servoCatch = 0;
-            //TODO: JOB FINISHED ///////////////////////////////////////
+            //TODO: JOB FINISHED
             //}else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
-            //TODO: ERROR //////////////////////////////////////////////
+            //TODO: ERROR
             //}
     }
 }
 
-void catchMoveL(void) {                  // Servo maneuver to catch the puck
+void catchMoveR(void) {                  // Servo maneuver to catch the puck
     if (frontServoL.anglePos > L_SAFE) {
         frontServoL.anglePos -= 1;
         frontServoL.updatePos();
@@ -353,7 +357,7 @@ void catchMoveL(void) {                  // Servo maneuver to catch the puck
     }
 }
 
-void catchMoveR(void) {
+void catchMoveL(void) {
     if (frontServoR.anglePos < R_SAFE) {
         frontServoR.anglePos += 1;
         frontServoR.updatePos();
@@ -367,8 +371,8 @@ void catchMoveR(void) {
             frontServoR.anglePos += 1;
             frontServoR.updatePos();
         }
-        if (frontServoM.anglePos > M_MID) {
-            frontServoM.anglePos -= 1;
+        if (frontServoM.anglePos < M_MID) {
+            frontServoM.anglePos += 1;
             frontServoM.updatePos();
         }
         fServoTimeBegin = millis();
@@ -395,8 +399,8 @@ void freePucks(void) {
             break;
         case (B_ROLL):
             digitalWrite(STBY_GEAR, HIGH);
-            motorLeft.drive(40, FORWARD);          // drive forward to
-            motorRight.drive(40, BACKWARD);         // free the pucks
+            motorLeft.drive(B_FREE_SPEED, FORWARD);          // drive forward to
+            motorRight.drive(B_FREE_SPEED, FORWARD);         // free the pucks
             bServoTimeBegin = millis();
             B_STATE = B_ROLLING;
             break;
@@ -414,6 +418,7 @@ void freePucks(void) {
             backServoR.reset();
             B_STATE = 0;
             servoReleasePucks = 0;
+            //TODO: Job finished
         default:
             return;
     }
@@ -421,6 +426,8 @@ void freePucks(void) {
 
 void servoPrepare(int angle) {      // Presets the middle-servo for the coming puck
     frontServoM.writePos(angle);
+    frontServoL.openCatch();
+    frontServoR.openCatch();
 
 }
 
