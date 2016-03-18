@@ -422,7 +422,7 @@ void get_ir_sensors() {
   for (i = 0; i < 8; i++) {
     sensor[i] = analogRead(i);
     sensor[i] *= (255./MAX_IR_SENSOR_VALUE);
-    ir_sensor = floor(sensor[i]);
+    ir_sensor = round(sensor[i]);
   }
 
 }
@@ -447,4 +447,3 @@ ISR (SPI_STC_vect)
 }  // end of interrupt routine SPI_STC_vect
 
 */
-
