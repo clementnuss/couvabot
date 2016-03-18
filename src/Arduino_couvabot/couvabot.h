@@ -43,9 +43,9 @@
 #define F_LIFT          9
 #define F_LIFT_LAPSE    8000
 #define M_MID           90
-#define M_RIGHT           30
+#define M_RIGHT         30
 #define M_LEFT          150
-#define L_OPEN          180
+#define L_OPEN          179
 #define L_CLOSE         100
 #define L_PUSH          90
 #define L_SAFE          150
