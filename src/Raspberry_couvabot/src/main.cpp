@@ -9,22 +9,21 @@
 
 #include "main.h"
 #include "imageProcessing/detectObjects.h"
-#include "physIface/mvmtController.h"
+#include "physIface/arduinoComm.h"
 #include "physIface/localTime.h"
-#include "physIface/HeartBeat.h"
 #include "navigation/Trajectory.h"
 #include "navigation/differentialDrive.h"
+#include "navigation/braitenberg.h"
 
 using namespace std;
 
 GenericCam *cam;
 HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds;
-mvmtCtrl::mvmtController *mvCtrl;
+ardCom::arduinoComm *arduinoComm;
 Trajectory trajectory;
 SPICom *spiCom;
-HeartBeat *heartBeat;
 Mat img, hsv, filtered;
-vector<Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
+vector <Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
 
 pthread_mutex_t mutexBlobs, mutexCount;
 bool endImgProc, loopStart;
@@ -35,13 +34,29 @@ unsigned startTime;
 int checkTime();
 
 int main(int argc, char **argv) {
+/*
+    // With light
+    hsvBoundsRed.hMin = 0;
+    hsvBoundsRed.hMax = 8;
+    hsvBoundsRed.sMin = 115;
+    hsvBoundsRed.sMax = 206;
+    hsvBoundsRed.vMin = 117;
+    hsvBoundsRed.vMax = 182;
+
+    hsvBoundsGreen.hMin = 58;
+    hsvBoundsGreen.hMax = 79;
+    hsvBoundsGreen.sMin = 24;
+    hsvBoundsGreen.sMax = 100;
+    hsvBoundsGreen.vMin = 43;
+    hsvBoundsGreen.vMax = 95;
+*/
 
     hsvBoundsRed.hMin = 0;
-    hsvBoundsRed.hMax = 11;
-    hsvBoundsRed.sMin = 119;
-    hsvBoundsRed.sMax = 166;
-    hsvBoundsRed.vMin = 144;
-    hsvBoundsRed.vMax = 192;
+    hsvBoundsRed.hMax = 21;
+    hsvBoundsRed.sMin = 149;
+    hsvBoundsRed.sMax = 224;
+    hsvBoundsRed.vMin = 106;
+    hsvBoundsRed.vMax = 217;
 
     hsvBoundsGreen.hMin = 0;
     hsvBoundsGreen.hMax = 0;
@@ -51,6 +66,7 @@ int main(int argc, char **argv) {
     hsvBoundsGreen.vMax = 0;
 
     double vBat;
+
 
     if (argc > 1) {
         vBat = strtod(argv[1], NULL);
@@ -70,23 +86,21 @@ int main(int argc, char **argv) {
         }
     }
 
+
     initialiseEpoch();
 
     acquiredFrames = 0;
     processedFrames = 0;
 
-    mvCtrl = new mvmtCtrl::mvmtController(spiCom, vBat);
-    mvCtrl->gearsCommand({0, 0});
+    arduinoComm = new ardCom::arduinoComm(spiCom, vBat);
+    arduinoComm->gearsCommand({0, 0});
 
-    heartBeat = new HeartBeat(spiCom);
+    ardCom::sensorsData sensors;
+    startTime = millis();
 
     // initialize the camera
     initCam();
     usleep(500000);
-
-    mvCtrl->gearsCommand({.9, 1.});
-    usleep(60000000);
-
 
     int rc = 0;
     pthread_t threads[3];
@@ -116,7 +130,7 @@ int main(int argc, char **argv) {
     pthread_cancel(threads[0]); // End the image processing thread
     pthread_cancel(threads[1]); // End the loop thread
 
-    mvCtrl->gearsCommand({0, 0});
+    arduinoComm->gearsCommand({0, 0});
 
 
     if (RPI) {
@@ -131,14 +145,15 @@ void *loop(void *threadArgs) {
 
     int const middleX = FRAME_WIDTH / 2;
 
+    /*
     while (heartBeat->start() != 1){
         // Waiting the start signal
     }
-
+    */
     cout << "Start signal received !\n";
     startTime = millis();
 
-    gearsPower gearsSpeeds({0,0});
+    gearsPower gearsSpeeds({0, 0});
 
     unsigned int acqFrames = 0;
 
@@ -167,13 +182,15 @@ void *loop(void *threadArgs) {
                 maxG = &processedGreenBlobs.at(0);  // Get blob with biggest area
             } else {
                 maxG = new Blob();
-                cout << "No green blobs\n";
+                if (DEBUG)
+                    cout << "No green blobs\n";
             }
             if (processedRedBlobs.size() > 0) {
                 maxR = &processedRedBlobs.at(0);  // Get blob with biggest area
             } else {
                 maxR = new Blob();
-                cout << "No red blobs\n";
+                if (DEBUG)
+                    cout << "No red blobs\n";
             }
 
             pthread_mutex_unlock(&mutexBlobs);
@@ -195,7 +212,7 @@ void *loop(void *threadArgs) {
             }
 
             if (!targetFound) {
-                //mvCtrl->gearsCommand({0, 0});
+                //arduinoComm->gearsCommand({0, 0});
                 //cout << "No target found\n";
                 continue;
             }
@@ -203,49 +220,86 @@ void *loop(void *threadArgs) {
             target = &blobsBuffer[i];
 
 
-            cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
-            " ,aire " << target->getArea() << " et couleur " << target->getColour() << "\n";
-
             double dTarget = project(target->getPosX(), target->getPosY());
+
+
+            cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
+            " ,aire " << target->getArea() << " et couleur " << target->getColour() << " et distance " << dTarget <<
+            "\n";
+
             double speed = 0;
             if (dTarget > 80) {
                 speed = 1.0;
             } else if (dTarget > 60) {
                 speed = 0.7;
-            } else if (dTarget > 40) {
+            } else if (dTarget > 35) {
                 speed = 0.35;
-            } else if (dTarget > 30) {
-                speed = 0.1;
                 if ((target->getPosX() - middleX) < -2) {
-                    mvCtrl->prepareLeft();
-                    cout << "Prepared left container\n";
+                    if (arduinoComm->prepareLeft())
+                        cout << "Prepared left container\n";
+                    else {
+                        usleep(50); // Wait 50 [us]
+                        arduinoComm->prepareLeft();
+                    }
                 }
                 else {
-                    mvCtrl->prepareRight();
-                    cout << "Prepared right container\n";
+                    if (arduinoComm->prepareRight())
+                        cout << "Prepared right container\n";
+                    else {
+                        usleep(50); // Wait 50 [us]
+                        arduinoComm->prepareRight();
+                    }
                 }
-            } else if (dTarget <= 25) {
-                speed = 0.0;
-                mvCtrl->catchPuck();
+            } else if (dTarget <= 35) {
+                speed = 0.33;
+                gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
+                arduinoComm->gearsCommand(gearsSpeeds);
+                usleep(2000 * 1000);
+
+                arduinoComm->gearsCommand({0,0});
+
+                cout << "Catching puck!\n";
+                arduinoComm->catchPuck();
+
+
+                for (int j = 0; j < bufferSize; ++j) {
+                    blobsBuffer[j] = Blob(0, 0, -1, 0);
+                }
+
+                usleep(3000 * 1000);
+
+                continue;
             }
 
 
             gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
 
+            ardCom::sensorsData sensors;
+
+            sensors = arduinoComm->getData();
+            while (!sensors.valid) {
+                cout << "Error while fetching sensors data ! Trying again in 50 [us].\n";
+                usleep(50);
+                sensors = arduinoComm->getData();
+            }
+
+
+            braiten(&gearsSpeeds, sensors);
+
+            arduinoComm->gearsCommand(gearsSpeeds);
+
             cout << "Number of processed frames : " << processedFrames << "\n";
         }
-
-
-
     }
 
+    arduinoComm->gearsCommand({0, 0});
     cout << "Loop thread cleanly closed\n";
 
     pthread_exit(NULL);
 }
 
 int checkTime() {
-    return (millis() - startTime) > 60 * 1000;
+    return (millis() - startTime) > 80 * 1000;
 }
 
 void *imgProc(void *threadArgs) {
@@ -330,12 +384,12 @@ void capBlobs() {
     if (CALIB)
         imshow("Red filtered", filtered);
 
-    /*
+
     imgProcess(hsvBoundsGreen, hsv, filtered);
     detectObjects(greenBlobs, filtered, GREEN);
     if (CALIB)
         imshow("Green filtered", filtered);
-    */
+
 }
 
 void capImage() {

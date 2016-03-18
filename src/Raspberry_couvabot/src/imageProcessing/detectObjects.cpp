@@ -14,7 +14,7 @@ using namespace cv;
 #include "detectObjects.h"
 
 //Minimum/maximum detection settings
-const int MIN_AREA = 10 * 10;
+const int MIN_AREA = 70;
 const int MAX_AREA = 500;
 const int MAX_NUM_OBJECTS = 30;
 

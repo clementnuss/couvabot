@@ -6,7 +6,7 @@
 #include "../robotConstants.h"
 
 int const middleX = FRAME_WIDTH / 2;
-double const diffCoeff = 0.15;
+double const diffCoeff = 0.2;
 
 gearsPower getDiffParams(int x, int y, double speed) {
 

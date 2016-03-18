@@ -9,7 +9,7 @@
 using namespace mvmtCtrl;
 
 mvmtController::mvmtController(SPICom *spiCom, double vBat) {
-    maxPWM = (int) ((7 * 255) / vBat);
+    maxPWM = (int) ((6 * 255) / vBat);
     this->spiCom = spiCom;
 }
 
