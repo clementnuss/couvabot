@@ -12,8 +12,8 @@
 
 uint8_t receiveBuffer[5];
 uint8_t dat;
-byte marker = 0;
-byte sendMarker = 0;
+uint8_t marker = 0;
+uint8_t sendMarker = 0;
 bool sendingData;
 
 int timeout = 0;
@@ -50,6 +50,8 @@ void setup() {
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
     pinMode(STBY_BELT, OUTPUT);
+    pinMode(38, OUTPUT);
+    digitalWrite(38, 0);
 
     frontServoL.Attach(SERVO_FRONT_L);  // Servo setup
     frontServoM.Attach(SERVO_FRONT_M);
@@ -95,11 +97,15 @@ void spiHandler() {
         case 0:
             if (SPDR == 'H') {
                 SPDR = 'a'; // Acknowledges spi communication start
+                startLoop = false;
                 marker++;
             } else if (SPDR == 'D') {       //When the raspberry asks for Data, the arduino serves it
                 marker = 10;
+                sendMarker = 0;
+                startLoop = false;
+                get_ir_sensors();
                 sendData();
-            } else if (SPDR == 'S'){
+            } else if (SPDR == 'S') {
                 startLoop = true;
                 initSPI();
             } else
@@ -119,16 +125,12 @@ void spiHandler() {
 
 void sendData() {
     switch (sendMarker) {
-        case 0:
-            //SPDR = analogRead();
-            sendMarker++;
-            break;
-        case 1:
-            if (SPDR == 'D') {
-
-            }
-        default:
+        case 8:
             initSPI();
+            break;
+        default:
+            // Send sensor data
+            SPDR = ir_sensor[sendMarker++];
     }
 
 }
@@ -416,34 +418,11 @@ void servoPrepare(int angle) {      // Presets the middle-servo for the coming p
 }
 
 void get_ir_sensors() {
-  int sensor[8]; // raw data [0; 1023]
+    int sensor[8]; // raw data [0; 1023]
 
-  // Read sensors
-  for (int i = 0; i < 8; i++) {
-    sensor[i] = analogRead(i);
-    sensor[i] *= (255./MAX_IR_SENSOR_VALUE);
-    ir_sensor[i] = round(sensor[i]);
-  }
-
+    // Read sensors
+    for (uint8_t i = 0; i < 8; i++) {
+        sensor[i] = analogRead(i);
+        ir_sensor[i] = (uint8_t) round(sensor[i] * (255. / MAX_IR_SENSOR_VALUE));
+    }
 }
-
-
-/*
-// SPI interrupt routine
-ISR (SPI_STC_vect)
-{
-    byte c = SPDR;  // grab byte from SPI Data Register
-
-    // add to buffer if room
-    if (pos < sizeof buf)
-    {
-        buf [pos++] = c;
-
-        // example: newline means time to process buffer
-        if (c == '\n')
-            process_it = true;
-
-    }  // end of room available
-}  // end of interrupt routine SPI_STC_vect
-
-*/
