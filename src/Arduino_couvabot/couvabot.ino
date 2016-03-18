@@ -12,8 +12,8 @@
 
 uint8_t receiveBuffer[5];
 uint8_t dat;
-byte marker = 0;
-byte sendMarker = 0;
+uint8_t marker = 0;
+uint8_t sendMarker = 0;
 bool sendingData;
 
 int timeout = 0;
@@ -28,8 +28,8 @@ Motor motorBelt(AIN1_BELT, AIN2_BELT, PWM_BELT);
 ServoM frontServoL(L_OPEN);                        // Object declaration
 ServoM frontServoR(R_OPEN);
 ServoM frontServoM(M_MID);
-ServoM backServoL(B_CLOSE);
-ServoM backServoR(B_CLOSE);
+ServoM backServoL(B_L_CLOSE);
+ServoM backServoR(B_R_CLOSE);
 
 bool servoReleasePucks = 0;
 bool servoCatch = 0;
@@ -50,6 +50,8 @@ void setup() {
 
     pinMode(STBY_GEAR, OUTPUT);  // Must be added in setup
     pinMode(STBY_BELT, OUTPUT);
+    pinMode(38, OUTPUT);
+    digitalWrite(38, 0);
 
     frontServoL.Attach(SERVO_FRONT_L);  // Servo setup
     frontServoM.Attach(SERVO_FRONT_M);
@@ -95,11 +97,15 @@ void spiHandler() {
         case 0:
             if (SPDR == 'H') {
                 SPDR = 'a'; // Acknowledges spi communication start
+                startLoop = false;
                 marker++;
             } else if (SPDR == 'D') {       //When the raspberry asks for Data, the arduino serves it
                 marker = 10;
+                sendMarker = 0;
+                startLoop = false;
+                get_ir_sensors();
                 sendData();
-            } else if (SPDR == 'S'){
+            } else if (SPDR == 'S') {
                 startLoop = true;
                 initSPI();
             } else
@@ -119,16 +125,12 @@ void spiHandler() {
 
 void sendData() {
     switch (sendMarker) {
-        case 0:
-            //SPDR = analogRead();
-            sendMarker++;
-            break;
-        case 1:
-            if (SPDR == 'D') {
-
-            }
-        default:
+        case 8:
             initSPI();
+            break;
+        default:
+            // Send sensor data
+            SPDR = ir_sensor[sendMarker++];
     }
 
 }
@@ -172,18 +174,21 @@ void commandDecoder() {
         case 'L':
             initSPI();
             servoPrepare(M_LEFT);
+            F_STATE = F_CATCH_L;
             break;
         case 'R':
             initSPI();
             servoPrepare(M_RIGHT);
+            F_STATE = F_CATCH_R;
             break;
         case 'C':
             servoCatch = 1;         // Catch the puck
             initSPI();
             break;
         case 'f':
-            marker = 0;           // Release all pucks
-            servoReleasePucks = 1;
+            servoReleasePucks = 1;      // Release all pucks
+            B_STATE = B_RELEASE;
+            initSPI();
             break;
 
         default:
@@ -310,9 +315,8 @@ void catchPuck(void) {
             break;
         case (F_PULL):
             if ((millis() - fServoTimeBegin) >= F_PULL_LAPSE) {
-
                 F_STATE = F_LIFT;
-                // READY TO MOVE //////////////////////////////////////
+                //TODO: READY TO MOVE //////////////////////////////////////
             }
             break;
         case (F_LIFT):              // Puck is captured
@@ -320,9 +324,9 @@ void catchPuck(void) {
             digitalWrite(STBY_BELT, LOW);
             F_STATE = 0;
             servoCatch = 0;
-            // JOB FINISHED ///////////////////////////////////////
+            //TODO: JOB FINISHED ///////////////////////////////////////
             //}else if((millis() - fServoTimeBegin) >= F_LIFT_LAPSE){
-            // ERROR //////////////////////////////////////////////
+            //TODO: ERROR //////////////////////////////////////////////
             //}
     }
 }
@@ -375,9 +379,14 @@ void freePucks(void) {
     switch (B_STATE) {
         case (B_RELEASE):
             if ((millis() - bServoTimeBegin) >= B_LAPSE) {  // Open doors, gently
-                if (backServoL.anglePos > B_OPEN) {
-                    backServoL.anglePos -= 1;
-                    backServoL.updatePos();
+                if ((backServoL.anglePos < B_L_OPEN) || (backServoR.anglePos > B_R_OPEN)){
+                    if (backServoL.anglePos < B_L_OPEN){
+                        backServoL.anglePos += 1;
+                        backServoL.updatePos();}
+                    if (backServoR.anglePos > B_R_OPEN){
+                        backServoR.anglePos -= 1;
+                        backServoR.updatePos();
+                    }
                     bServoTimeBegin = millis();
                 } else {
                     B_STATE = B_ROLL;
@@ -416,34 +425,11 @@ void servoPrepare(int angle) {      // Presets the middle-servo for the coming p
 }
 
 void get_ir_sensors() {
-  int sensor[8]; // raw data [0; 1023]
+    int sensor[8]; // raw data [0; 1023]
 
-  // Read sensors
-  for (int i = 0; i < 8; i++) {
-    sensor[i] = analogRead(i);
-    sensor[i] *= (255./MAX_IR_SENSOR_VALUE);
-    ir_sensor[i] = round(sensor[i]);
-  }
-
+    // Read sensors
+    for (uint8_t i = 0; i < 8; i++) {
+        sensor[i] = analogRead(i);
+        ir_sensor[i] = (uint8_t) round(sensor[i] * (255. / MAX_IR_SENSOR_VALUE));
+    }
 }
-
-
-/*
-// SPI interrupt routine
-ISR (SPI_STC_vect)
-{
-    byte c = SPDR;  // grab byte from SPI Data Register
-
-    // add to buffer if room
-    if (pos < sizeof buf)
-    {
-        buf [pos++] = c;
-
-        // example: newline means time to process buffer
-        if (c == '\n')
-            process_it = true;
-
-    }  // end of room available
-}  // end of interrupt routine SPI_STC_vect
-
-*/
