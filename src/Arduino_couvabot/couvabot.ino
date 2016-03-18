@@ -419,10 +419,10 @@ void get_ir_sensors() {
   int sensor[8]; // raw data [0; 1023]
 
   // Read sensors
-  for (i = 0; i < 8; i++) {
+  for (int i = 0; i < 8; i++) {
     sensor[i] = analogRead(i);
     sensor[i] *= (255./MAX_IR_SENSOR_VALUE);
-    ir_sensor = round(sensor[i]);
+    ir_sensor[i] = round(sensor[i]);
   }
 
 }
