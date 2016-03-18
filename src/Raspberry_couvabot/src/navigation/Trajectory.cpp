@@ -9,7 +9,7 @@
 
 #include "Trajectory.h"
 
-using mvmtCtrl::mvmtController;
+using ardCom::arduinoComm;
 
 #include "../robotConstants.h"
 #include "../physIface/localTime.h"
@@ -50,8 +50,8 @@ gearsPower Trajectory::setWheelsPower(double spd) {
     pR *= spd;
     speedPer = spd;
 
-    vL = mvmtController::powerToSpeed(pL);
-    vR = mvmtController::powerToSpeed(pR);
+    vL = arduinoComm::powerToSpeed(pL);
+    vR = arduinoComm::powerToSpeed(pR);
     speedRatio = (vL - vR) / AXLE;
 
     return gearsPower{pL, pR};
@@ -92,7 +92,7 @@ int Trajectory::update() {
             return 0;
 
         double deltaT = (micros() - time) * 0.000001; // Delta t since last update [us]
-        double deltaD = deltaT * mvmtController::powerToSpeed(speedPer);
+        double deltaD = deltaT * arduinoComm::powerToSpeed(speedPer);
 
         rem -= deltaD;
         time = micros();

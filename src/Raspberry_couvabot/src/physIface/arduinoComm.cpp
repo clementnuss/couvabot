@@ -3,26 +3,30 @@
 //
 
 #include <math.h>
-#include "mvmtController.h"
+#include <unistd.h>
+#include "arduinoComm.h"
 #include "../robotConstants.h"
+#include "localTime.h"
 
-using namespace mvmtCtrl;
+using namespace ardCom;
 
-mvmtController::mvmtController(SPICom *spiCom, double vBat) {
-    maxPWM = (int) ((6 * 255) / vBat);
+arduinoComm::arduinoComm(SPICom *spiCom, double vBat) {
+    maxPWM = (int) ((2.5 * 255) / vBat);
     this->spiCom = spiCom;
+
+    pollTime = 0;
 }
 
 
-double mvmtController::powerToSpeed(double power) {
+double arduinoComm::powerToSpeed(double power) {
     return WHEEL_SPEED * power;
 }
 
-uint8_t mvmtController::getPWM(double p) {
+uint8_t arduinoComm::getPWM(double p) {
     return (uint8_t) ((maxPWM * p) > maxPWM ? maxPWM : maxPWM * p);
 }
 
-bool mvmtController::gearsCommand(gearsPower power) {
+bool arduinoComm::gearsCommand(gearsPower power) {
 
     int pwmL = getPWM(fabs(power.pL));
     int pwmR = getPWM(fabs(power.pR));
@@ -79,7 +83,7 @@ bool mvmtController::gearsCommand(gearsPower power) {
     return true;
 }
 
-bool mvmtController::catchPuck() {
+bool arduinoComm::catchPuck() {
 
     readData = spiCom->CS0_transfer('H');
     if (readData != 'h') {
@@ -94,7 +98,7 @@ bool mvmtController::catchPuck() {
 }
 
 
-bool mvmtController::prepareLeft() {
+bool arduinoComm::prepareLeft() {
 
     readData = spiCom->CS0_transfer('H');
     if (readData != 'h') {
@@ -109,7 +113,7 @@ bool mvmtController::prepareLeft() {
 }
 
 
-bool mvmtController::prepareRight() {
+bool arduinoComm::prepareRight() {
 
     readData = spiCom->CS0_transfer('H');
     if (readData != 'h') {
@@ -123,3 +127,49 @@ bool mvmtController::prepareRight() {
     return true;
 }
 
+
+sensorsData arduinoComm::getData() {
+    sensorsData sens;
+    sens.valid = false;
+
+    if ((millis() - pollTime) < 100)    // Check the arduino every 10 ms in start mode.
+        return sens;
+    else
+        pollTime = millis();
+
+    readData = spiCom->CS0_transfer('D');   // Ask for Data
+    if (readData != 'h') {
+        cout << "Arduino was not ready to serve Data\n";
+        return sens;
+    }
+
+    usleep(1000);   // Wait 1 [ms] before getting the values
+
+    for (int i = 0; i < 8; ++i) {
+        sens.values[i] = spiCom->CS0_transfer('R');  // Random byte, to get data from Arduino
+    }
+
+    spiCom->CS0_transfer('E');  // send EOT
+    sens.valid = true;
+    return sens;
+}
+
+
+int arduinoComm::start() {
+
+    if ((millis() - pollTime) < 100)    // Check the arduino every 10 ms in start mode.
+        return 0;
+    else
+        pollTime = millis();
+
+    readData = spiCom->CS0_transfer('S');
+    if (readData != 'h')
+        cout << "Polled Arduino when not ready\n";
+
+    readData = spiCom->CS0_transfer('E');   // EOT
+
+    if (readData == 's')    // if there is an 's', we start !
+        return 1;
+    else
+        return 0;
+}

@@ -38,6 +38,31 @@ int HeartBeat::pingArduino() {
 }
 
 arduinoData HeartBeat::getData() {
+
+    if ((millis() - time) < 200)    // Ping the arduino every 200 ms.
+        return 0;
+    else
+        time = millis();
+
+    readData = spiCom->CS0_transfer('H');
+    switch (readData) {
+        case 'h':
+            return 0;
+        case 'd':
+            break;
+        default:
+            cout << "HeartBeat when Arduino not ready\n";
+    }
+
+    readData = spiCom->CS0_transfer('M');
+    if (readData != 'a') {
+        cerr << "Protocol error!\n";
+        cerr << "Received: " << readData << "\n";
+        return false;
+    }
+
+    return 1;
+
     return arduinoData();
 }
 

@@ -5,9 +5,9 @@
 #ifndef COUVABOT_TRAJECTORY_H
 #define COUVABOT_TRAJECTORY_H
 
-#include "../physIface/mvmtController.h"
+#include "../physIface/arduinoComm.h"
 
-typedef mvmtCtrl::gearsPower gearsPower;
+typedef ardCom::gearsPower gearsPower;
 
 class Trajectory {
 private:

@@ -8,9 +8,6 @@
 
 #include "SPICom.h"
 
-struct arduinoData{
-
-};
 
 class HeartBeat {
 
