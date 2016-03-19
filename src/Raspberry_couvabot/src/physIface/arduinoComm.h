@@ -39,6 +39,8 @@ namespace ardCom {
 
         bool prepareRight();
 
+        bool releasePuck();
+
         sensorsData getData();
 
         int start();

@@ -12,7 +12,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #if CALIB
-    #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #endif
 
 #include "imageProcessing/camera.h"
@@ -30,10 +30,12 @@ void capImage();
 
 int main(int argc, char **argv);
 
-void * loop(void *threadArgs);
+void *loop(void *threadArgs);
 
-void * imgProc(void *threadArgs);
+void *imgProc(void *threadArgs);
 
-void * braitenberg(void *threadArgs);
+int checkReturnTime();
+
+int checkEnd();
 
 #endif //COUVABOT_MAIN_H

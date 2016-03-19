@@ -21,7 +21,9 @@ bool detectObjects(vector<Blob> &blobs, Mat binaryImage, int colour);
 
 void createTrackbars(HSVbounds &bounds, string winName);
 
-void imgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered);
+void puckImgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered);
+
+void baseImgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered);
 
 //void momentsOfOrder1(const cv::Mat &img, int *moments); TODO: implement a method returning only the 1st order moments
 
