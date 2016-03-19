@@ -64,6 +64,23 @@ void setup() {
     frontServoM.reset();
     backServoL.reset();
     backServoR.reset();
+
+    // SERVO TEST
+/*
+    servoPrepare(M_RIGHT);
+    //servoPrepare(M_LEFT);
+
+    F_STATE = F_CATCH_R;
+    //F_STATE = F_CATCH_L;
+
+    servoCatch = 1;
+    delay(2000);
+//*/
+/*
+    servoReleasePucks = 1;      // Release all pucks
+    B_STATE = B_RELEASE;
+    delay(1000);
+//*/
 }
 
 void loop() {
@@ -87,9 +104,16 @@ void loop() {
         }
     }
 
+
+
     if (servoCatch) catchPuck();
 
     if (servoReleasePucks) freePucks();
+
+    // SERVO TEST
+
+
+
 }
 
 void spiHandler() {
@@ -289,7 +313,7 @@ void catchPuck(void) {
             }
             if ((frontServoL.anglePos == L_CLOSE) &&
                 (frontServoR.anglePos == R_PUSH) &&
-                (frontServoM.anglePos == M_MID)) {
+                (frontServoM.anglePos == M_MID_L)) {
                 F_STATE = F_BELT;
                 fServoTimeBegin = 0;
             }
@@ -300,7 +324,7 @@ void catchPuck(void) {
             }
             if ((frontServoL.anglePos == L_PUSH) &&
                 (frontServoR.anglePos == R_CLOSE) &&
-                (frontServoM.anglePos == M_MID)) {
+                (frontServoM.anglePos == M_MID_R)) {
                 fServoTimeBegin = 0;
                 F_STATE = F_BELT;
             }
@@ -317,6 +341,7 @@ void catchPuck(void) {
         case (F_PULL):
             if ((millis() - fServoTimeBegin) >= F_PULL_LAPSE) {
                 F_STATE = F_LIFT;
+                //delay(100);
                 //TODO: READY TO MOVE
             }
             break;
@@ -349,7 +374,7 @@ void catchMoveR(void) {                  // Servo maneuver to catch the puck
             frontServoR.anglePos += 1;
             frontServoR.updatePos();
         }
-        if (frontServoM.anglePos > M_MID) {
+        if (frontServoM.anglePos > M_MID_R) {
             frontServoM.anglePos -= 1;
             frontServoM.updatePos();
         }
@@ -371,7 +396,7 @@ void catchMoveL(void) {
             frontServoR.anglePos += 1;
             frontServoR.updatePos();
         }
-        if (frontServoM.anglePos < M_MID) {
+        if (frontServoM.anglePos < M_MID_L) {
             frontServoM.anglePos += 1;
             frontServoM.updatePos();
         }
