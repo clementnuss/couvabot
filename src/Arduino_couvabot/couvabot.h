@@ -27,32 +27,43 @@
 #define B_R_CLOSE       90
 #define B_L_OPEN        160
 #define B_R_OPEN        20
-#define B_LAPSE         10
+#define B_LAPSE         30
 #define B_ROLL_LAPSE    1000
-#define B_ROLL_SPEED    110
+#define B_FREE_SPEED    40
 #define B_RELEASE       3
 #define B_ROLL          4
 #define B_ROLLING       5
 #define B_RECLOSE       6
+
 #define F_LAPSE         10
 #define F_CATCH_L       3
 #define F_CATCH_R       4
 #define F_BELT          7
 #define F_PULL          8
-#define F_PULL_LAPSE    4900
+#define F_PULL_LAPSE    3900
+#define F_ROLL_SPEED    90
 #define F_LIFT          9
 #define F_LIFT_LAPSE    8000
+
+#define M_WAIT          30
 #define M_MID           90
-#define M_RIGHT         30
-#define M_LEFT          150
+#define M_RIGHT         150
+#define M_LEFT          30
+
+#define L_WAIT          100
 #define L_OPEN          179
 #define L_CLOSE         100
 #define L_PUSH          90
 #define L_SAFE          150
+
+#define R_WAIT          80
 #define R_OPEN          1
 #define R_CLOSE         80
 #define R_PUSH          90
 #define R_SAFE          30
+
+// SENSORS
+#define MAX_IR_SENSOR_VALUE 1023.
 
 //-------------------PINS TO CHANGE----------------------
 #define STBY_GEAR  26 //standby
@@ -81,7 +92,7 @@
 #define SERVO_BACK_L    6
 
 // IR sensors
-#define MAX_IR_SENSOR_VALUE 1023.
+#define IR_ENABLE       38
 
 // Function declaration ----------------------------------
 int angleConvert(int rotAngle, int rotSpeed);

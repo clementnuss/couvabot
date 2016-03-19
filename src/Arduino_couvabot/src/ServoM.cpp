@@ -4,8 +4,9 @@
 
 #include "ServoM.h"
 
-ServoM::ServoM(int rPos){
+ServoM::ServoM(int rPos, int cPos){
     resetPos = rPos;
+    catchPos = cPos;
     anglePos = rPos;
 }
 
@@ -20,6 +21,11 @@ void ServoM::Detach(){
 void ServoM::reset(void){
     servo.write(resetPos);
     anglePos = resetPos;
+}
+
+void ServoM::openCatch(void){
+    servo.write(catchPos);
+    anglePos = catchPos;
 }
 
 void ServoM::writePos(int angle){

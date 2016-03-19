@@ -13,17 +13,20 @@ class ServoM {
     // These are initialized at startup
     Servo servo;
     int resetPos;                      // Servo position at startup
+    int catchPos;
 
 public:
     volatile int anglePos;               // Position of servo at any time
 
-    ServoM(int rPos);
+    ServoM(int rPos, int cPos);
 
     void Attach(int pin);
 
     void Detach();
 
     void reset(void);
+
+    void openCatch(void);
 
     void writePos(int angle);
 
