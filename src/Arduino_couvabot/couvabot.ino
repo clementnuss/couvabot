@@ -41,6 +41,7 @@ volatile unsigned long fServoTimeBegin = 0;
 // SENSORS
 bool startLoop = false;
 int startSignal = 0;
+char startSignalChar = 'w';
 uint8_t ir_sensor[8];
 
 void setup() {
@@ -92,15 +93,15 @@ void loop() {
         startSignal = 0;
         for (int k = 0; k < 10; k++) {
             startSignal += analogRead(A3) ;
-            //TODO: Choisir la LED de départ
         }
         startSignal = startSignal / 10;
         if (startSignal >= 400) {
-            sendingData = 1;
             startLoop = false;
-            SPDR = 's'; // start
+            //SPDR = 's'; // start
+             startSignalChar = 's';
         } else {
-            SPDR = 'w'; // wait
+            //SPDR = 'w'; // wait
+             startSignalChar = 'w';
         }
     }
 
@@ -133,6 +134,9 @@ void spiHandler() {
             } else if (SPDR == 'S') {
                 startLoop = true;
                 initSPI();
+            } else if (SPDR == 'Z'){
+                 SPDR = startSignalChar;
+                 initSPI();
             } else
                 initSPI();
             break;
