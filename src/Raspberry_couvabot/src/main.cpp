@@ -17,7 +17,7 @@
 using namespace std;
 
 GenericCam *cam;
-HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds, adversaryBaseBounds, homeBaseBounds;
+HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds, base1Bounds, base2Bounds;
 ardCom::arduinoComm *arduinoComm;
 SPICom *spiCom;
 Mat img, hsv, filtered;
@@ -27,7 +27,7 @@ gearsPower gearsSpeeds({0, 0});
 
 pthread_mutex_t mutexBlobs, mutexCount, mutexFindBase;
 bool endImgProc, disableBraiten;
-int findBase;
+int findBase = 0, home;
 
 unsigned int acquiredFrames, processedFrames, braitenTime;
 unsigned startTime;
@@ -58,19 +58,19 @@ int main(int argc, char **argv) {
     hsvBoundsRed.vMin = 106;
     hsvBoundsRed.vMax = 217;
 
-    adversaryBaseBounds.hMin = 0;
-    adversaryBaseBounds.hMax = 0;
-    adversaryBaseBounds.sMin = 0;
-    adversaryBaseBounds.sMax = 0;
-    adversaryBaseBounds.vMin = 0;
-    adversaryBaseBounds.vMax = 0;
+    base1Bounds.hMin = 0;
+    base1Bounds.hMax = 180;
+    base1Bounds.sMin = 0;
+    base1Bounds.sMax = 360;
+    base1Bounds.vMin = 0;
+    base1Bounds.vMax = 360;
 
-    homeBaseBounds.hMin = 0;
-    homeBaseBounds.hMax = 0;
-    homeBaseBounds.sMin = 0;
-    homeBaseBounds.sMax = 0;
-    homeBaseBounds.vMin = 0;
-    homeBaseBounds.vMax = 0;
+    base2Bounds.hMin = 0;
+    base2Bounds.hMax = 180;
+    base2Bounds.sMin = 0;
+    base2Bounds.sMax = 360;
+    base2Bounds.vMin = 0;
+    base2Bounds.vMax = 360;
 
     double vBat;
 
@@ -151,19 +151,12 @@ void *loop(void *threadArgs) {
 
     int const middleX = FRAME_WIDTH / 2;
 
-    /*
-    while (heartBeat->start() != 1){
-        // Waiting the start signal
-    }
-    */
-    cout << "Start signal received !\n";
-    startTime = millis();
-
     ardCom::sensorsData sensors;
     braitenTime = millis();
+    int catchState = 0;
 
     unsigned int acqFrames = 0;
-    int redPucks = 0, greenPucks = 0;
+    int leftPucks = 0, rightPucks = 0;
 
     int const bufferSize = 10;
     Blob blobsBuffer[bufferSize];
@@ -171,11 +164,69 @@ void *loop(void *threadArgs) {
         blobsBuffer[i] = Blob(0, 0, -1, 0);
     }
 
+    spiCom->CS0_transfer('S');
+    usleep(50);
+
+    while (arduinoComm->start() != 1){
+        usleep(1000); // Waiting the start signal
+    }
+
+    startTime = millis();
+
+    pthread_mutex_lock(&mutexFindBase);
+    findBase = BASE1;
+    pthread_mutex_unlock(&mutexFindBase);
+
+    arduinoComm->gearsCommand({0.3, 0.3});
+    usleep(1000 * 1000);    // Go forward for 1000 [ms]
+
+    arduinoComm->gearsCommand({-0.2, 0.2});
+    usleep(200 * 1000);    // 180° turn [ms]
+    arduinoComm->gearsCommand({0, 0});
+
+
+    while (millis() - startTime < 2500) {
+        pthread_mutex_lock(&mutexCount);
+        acqFrames = acquiredFrames;
+        pthread_mutex_unlock(&mutexCount);
+
+        if (acqFrames > processedFrames) {    // New processed image
+            processedFrames = acqFrames;
+
+            // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
+            pthread_mutex_lock(&mutexBlobs);
+            Blob *base;
+
+            if (processedGreenBlobs.size() > 0) {
+                base = &cachedBaseBlobs.at(0);  // Get blob with biggest area
+            } else {
+                base = new Blob();
+            }
+
+            pthread_mutex_unlock(&mutexBlobs);
+
+            if (base->getArea() >= 2500){
+                home = BASE1;
+                goto start;
+            }
+        }
+
+    }
+
+    if (!home) {
+        home = BASE2;
+    }
+
+    findBase = 0;
+
+    start:
+    cout << "Start signal received !\n";
+
     while (checkEnd() == 0) {
 
-        if (checkReturnTime()){
+        if (checkReturnTime()) {
             pthread_mutex_lock(&mutexFindBase);
-            findBase = HOME;
+            findBase = home;
             pthread_mutex_unlock(&mutexFindBase);
         }
 
@@ -186,15 +237,15 @@ void *loop(void *threadArgs) {
         if (acqFrames > processedFrames) {    // New processed image
             processedFrames = acqFrames;
 
-            if (findBase || redPucks == 1 && greenPucks == 1) {   // When there are 4 pucks, go to the base
+            if (findBase || (leftPucks == 1 && rightPucks == 1)) {   // When there are 4 pucks, go to the base
 
-                if (redPucks == 1 && greenPucks == 1) {
+                if (leftPucks == 1 && rightPucks == 1) {
                     pthread_mutex_lock(&mutexFindBase);
-                    findBase = HOME;
+                    findBase = home;
                     pthread_mutex_unlock(&mutexFindBase);
 
-                    redPucks = 0;   // Reset the puck counters
-                    greenPucks = 0;
+                    leftPucks = 0;   // Reset the puck counters
+                    rightPucks = 0;
 
                     // Reset the blobs buffer
                     for (int j = 0; j < bufferSize; ++j) {
@@ -249,7 +300,7 @@ void *loop(void *threadArgs) {
                         speed = 0.7;
                     } else if (dTarget > 45) {
                         speed = 0.5;
-                    } else if (dTarget > 37) {
+                    } else if (dTarget > 35) {
                         speed = 0.35;
                     } else if (dTarget <= 35) {
                         speed = 0.33;
@@ -259,7 +310,7 @@ void *loop(void *threadArgs) {
                         cout << "Approching base!\n";
 
                         unsigned int approachTime = millis();
-                        while (millis() - approachTime < 1500 * 1000)    // Approach base for 1500 [ms]
+                        while (millis() - approachTime < 1500 * 1000) {    // Approach base for 1500 [ms]
                             // When reaching the base, we use braitenberg to (quite randomly) position ourselves
                             if (millis() - braitenTime < BRAITENBERG_RATE)
                                 continue;
@@ -276,6 +327,7 @@ void *loop(void *threadArgs) {
                                 braiten(&gearsSpeeds, sensors);
                                 arduinoComm->gearsCommand(gearsSpeeds);
                             }
+                        }
 
                         arduinoComm->gearsCommand({0, 0});
 
@@ -286,7 +338,7 @@ void *loop(void *threadArgs) {
                             blobsBuffer[j] = Blob(0, 0, -1, 0);
                         }
 
-                        usleep(1500 * 1000);
+                        usleep(150 * 1000);
 
                         pthread_mutex_lock(&mutexFindBase);
                         findBase = 0;       // We will again be in the "normal" loop
@@ -361,28 +413,51 @@ void *loop(void *threadArgs) {
                     speed = 0.7;
                 } else if (dTarget > 45) {
                     speed = 0.5;
-                } else if (dTarget > 39) {
+                } else if (dTarget > 35) {
                     speed = 0.35;
                     disableBraiten = true;
 
                     if (target->getColour() == RED) {
-                        if (target->getColour() == RED) {
-                            if (!arduinoComm->prepareLeft()) {
-                                usleep(50); // Wait 50 [us]
-                                arduinoComm->prepareLeft();
-                            }
-                        }
-                        cout << "Prepared left container for red puck\n";
-                    } else {
-                        if (target->getColour() == RED) {
-                            if (!arduinoComm->prepareRight()) {
-                                usleep(50); // Wait 50 [us]
+                        if (leftPucks == 1) {
+                            if (rightPucks == 0) {
                                 arduinoComm->prepareRight();
+                                catchState = RIGHT;
+                                cout << "prepared right container for red puck, because red container was full";
+                            } else {
+                                pthread_mutex_lock(&mutexFindBase);
+                                findBase = home;
+                                pthread_mutex_unlock(&mutexFindBase);
+                                cout << "Container full -> go home";
+                                continue;
                             }
+
+                        } else {
+                            arduinoComm->prepareLeft();
+                            catchState = LEFT;
                         }
-                        cout << "Prepared right container for green puck\n";
+                        cout << "Prepared container for red puck\n";
+                    } else {
+                        if (rightPucks == 1) {
+                            if (leftPucks == 0) {
+                                arduinoComm->prepareLeft();
+                                catchState = LEFT;
+                                cout << "prepared left container for green puck, because green container was full";
+                            } else {
+                                pthread_mutex_lock(&mutexFindBase);
+                                findBase = home;
+                                pthread_mutex_unlock(&mutexFindBase);
+                                cout << "Container full -> go home";
+                                continue;
+                            }
+
+                        } else {
+                            arduinoComm->prepareRight();
+                            catchState = RIGHT;
+                        }
+
+                        cout << "Prepared container for red puck\n";
                     }
-                } else if (dTarget <= 35) { // Go catch the puck
+                } else if (dTarget <= 35) { // Go catch the puck.
 
                     speed = 0.33;
                     gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
@@ -395,10 +470,10 @@ void *loop(void *threadArgs) {
                     cout << "Catching puck!\n";
                     arduinoComm->catchPuck();
 
-                    if (target->getColour() == RED) {
-                        leftContainer[redPucks++] = RED;
+                    if (catchState == RIGHT) {
+                        rightContainer[rightPucks++] = target->getColour();
                     } else {
-                        rightContainer[greenPucks++] = GREEN;
+                        leftContainer[leftPucks++] = target->getColour();
                     }
 
                     for (int j = 0; j < bufferSize; ++j) {
@@ -420,6 +495,7 @@ void *loop(void *threadArgs) {
 
         }
 
+
         braiten:
         if (millis() - braitenTime < BRAITENBERG_RATE)
             continue;
@@ -427,7 +503,7 @@ void *loop(void *threadArgs) {
 
             if (!disableBraiten) {
                 braitenTime = millis();
-
+#if RPI
                 sensors = arduinoComm->getData();
                 while (!sensors.valid) {
                     cout << "Error while fetching sensors data ! Trying again in 50 [us].\n";
@@ -437,6 +513,7 @@ void *loop(void *threadArgs) {
 
                 braiten(&gearsSpeeds, sensors);
                 arduinoComm->gearsCommand(gearsSpeeds);
+#endif
             }
         }
 
@@ -460,9 +537,10 @@ int checkReturnTime() {
 void *imgProc(void *threadArgs) {
 
     if (CALIB) {
-        //createTrackbars(hsvBoundsGreen, "Green Trackbars");
+        createTrackbars(hsvBoundsGreen, "Green Trackbars");
         createTrackbars(hsvBoundsRed, "Red Trackbars");
-        //createTrackbars(whiteBoardBounds, "WhiteBoard bounds");
+        createTrackbars(base1Bounds, "Base 1 bounds");
+        createTrackbars(base2Bounds, "Base 2 bounds");
     }
 
     int findBaseCached;
@@ -477,12 +555,21 @@ void *imgProc(void *threadArgs) {
 
         if (findBaseCached) {
 
-            if (findBaseCached == HOME) {
-                baseImgProcess(homeBaseBounds, hsv, filtered);
-                detectObjects(baseBlobs, filtered, HOME);
+            if (CALIB) {
+                //imshow("camera", img);
+                imshow("HSV image", hsv);
+            }
+
+            if (findBaseCached == BASE1) {
+                baseImgProcess(base1Bounds, hsv, filtered);
+                detectObjects(baseBlobs, filtered, BASE1);
             } else {
-                baseImgProcess(homeBaseBounds, hsv, filtered);
-                detectObjects(baseBlobs, filtered, ADVERSARY);
+                baseImgProcess(base2Bounds, hsv, filtered);
+                detectObjects(baseBlobs, filtered, BASE2);
+            }
+
+            if (CALIB) {
+                imshow("filtered", filtered);
             }
 
             sort(baseBlobs.begin(), baseBlobs.end(), compBlobs);
@@ -503,40 +590,10 @@ void *imgProc(void *threadArgs) {
 
         } else {
 
-            // Code to detect the board!
-/*
-        Mat whiteBoardFiltered;
-        puckImgProcess(whiteBoardBounds, hsv, whiteBoardFiltered);
-        imshow("whiteBoard filtered", whiteBoardFiltered);
-
-        RotatedRect board;
-        filterBoard(whiteBoardBounds, whiteBoardFiltered, board);
-
-        Point2f vertices;
-        board.points(&vertices);
-
-        Mat mask = Mat(hsv.size(), CV_8U, Scalar(0));
-        for (int i = 0; i < img.rows; ++i) {
-            for (int j = 0; j < img.cols; ++j) {
-                Point p = Point(j, i);   // pay attention to the cordination
-                if (isInROI(p, &vertices)) {
-                    mask.at<uchar>(i, j) = 255;
-                }
-            }
-        }
-
-        Scalar color = Scalar(155, 165, 23);
-        Point2f rect_points[4];
-        board.points(rect_points);
-        for (int j = 0; j < 4; j++)
-            line(img, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
-*/
-
             if (CALIB) {
                 //imshow("camera", img);
                 imshow("HSV image", hsv);
             }
-//
 
             capBlobs();
 
@@ -556,11 +613,10 @@ void *imgProc(void *threadArgs) {
             pthread_mutex_lock(&mutexCount);
             acquiredFrames++;
             pthread_mutex_unlock(&mutexCount);
-
-            if (CALIB)
-                waitKey(50);
-
         }
+
+        if (CALIB)
+            waitKey(100);
     }
 
     cout << "Image processing thread cleanly closed\n";

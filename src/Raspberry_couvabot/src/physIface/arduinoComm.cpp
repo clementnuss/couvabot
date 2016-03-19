@@ -104,7 +104,10 @@ bool arduinoComm::prepareLeft() {
     if (readData != 'h') {
         cerr << "Protocol handshake error!\n";
         cerr << "Received: " << readData << "\n";
-        return false;
+
+        usleep(50);
+        readData = spiCom->CS0_transfer('H');
+
     }
 
     spiCom->CS0_transfer('L');
@@ -119,7 +122,10 @@ bool arduinoComm::prepareRight() {
     if (readData != 'h') {
         cerr << "Protocol handshake error!\n";
         cerr << "Received: " << readData << "\n";
-        return false;
+
+
+        usleep(50);
+        readData = spiCom->CS0_transfer('H');
     }
 
     spiCom->CS0_transfer('R');
@@ -162,11 +168,7 @@ int arduinoComm::start() {
     else
         pollTime = millis();
 
-    readData = spiCom->CS0_transfer('S');
-    if (readData != 'h')
-        cout << "Polled Arduino when not ready\n";
-
-    readData = spiCom->CS0_transfer('E');   // EOT
+    readData = spiCom->CS0_transfer('Z');
 
     if (readData == 's')    // if there is an 's', we start !
         return 1;

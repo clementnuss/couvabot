@@ -13,7 +13,7 @@ struct HSVbounds {
 
 
 #define RPI false
-#define CALIB false
+#define CALIB true
 #define DEBUG false
 #define WITE_BOARD false
 
@@ -27,6 +27,10 @@ struct HSVbounds {
 #define x_2 -166.505522823536
 #define x_1 60.240735082265
 #define x_0 21.679281107097
+
+#define RIGHT 1
+#define LEFT 2
+#define CLOSED 0
 
 #if RPI
 //include Raspberry things (Raspicam library)

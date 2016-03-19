@@ -44,7 +44,7 @@ void RPiCam::read(cv::Mat &image) {
 
 WebCam::WebCam() {
 
-    cap.open(1);
+    cap.open(0);
 
     if (!cap.isOpened())  // no success --> exit program
     {
