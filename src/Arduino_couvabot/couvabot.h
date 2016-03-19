@@ -24,7 +24,9 @@
 
 // SERVO MANEUVERS
 #define B_L_CLOSE       90
+#define B_L_START       80
 #define B_R_CLOSE       90
+#define B_R_START       100
 #define B_L_OPEN        150
 #define B_R_OPEN        45
 #define B_LAPSE         30
