@@ -91,11 +91,11 @@ void loop() {
     if (startLoop) {
         startSignal = 0;
         for (int k = 0; k < 10; k++) {
-            startSignal += analogRead(A3) + analogRead(A4);
+            startSignal += analogRead(A3) ;
             //TODO: Choisir la LED de départ
         }
-        startSignal = startSignal / 20;
-        if (startSignal < 800) {
+        startSignal = startSignal / 10;
+        if (startSignal >= 400) {
             sendingData = 1;
             startLoop = false;
             SPDR = 's'; // start
