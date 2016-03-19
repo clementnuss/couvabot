@@ -186,7 +186,7 @@ void commandDecoder() {
             servoCatch = 1;         // Catch the puck
             initSPI();
             break;
-        case 'f':
+        case 'F':
             servoReleasePucks = 1;      // Release all pucks
             B_STATE = B_RELEASE;
             initSPI();
