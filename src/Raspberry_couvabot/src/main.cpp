@@ -17,21 +17,21 @@
 using namespace std;
 
 GenericCam *cam;
-HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds;
+HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds, adversaryBaseBounds, homeBaseBounds;
 ardCom::arduinoComm *arduinoComm;
 SPICom *spiCom;
 Mat img, hsv, filtered;
-vector <Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
+vector<Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs, baseBlobs, cachedBaseBlobs;
 
 gearsPower gearsSpeeds({0, 0});
 
-pthread_mutex_t mutexBlobs, mutexCount;
-bool endImgProc, loopStart, disableBraiten;
+pthread_mutex_t mutexBlobs, mutexCount, mutexFindBase;
+bool endImgProc, disableBraiten;
+int findBase;
 
 unsigned int acquiredFrames, processedFrames, braitenTime;
 unsigned startTime;
-
-int checkTime();
+int leftContainer[2], rightContainer[2];
 
 int main(int argc, char **argv) {
 /*
@@ -58,12 +58,19 @@ int main(int argc, char **argv) {
     hsvBoundsRed.vMin = 106;
     hsvBoundsRed.vMax = 217;
 
-    hsvBoundsGreen.hMin = 0;
-    hsvBoundsGreen.hMax = 0;
-    hsvBoundsGreen.sMin = 0;
-    hsvBoundsGreen.sMax = 0;
-    hsvBoundsGreen.vMin = 0;
-    hsvBoundsGreen.vMax = 0;
+    adversaryBaseBounds.hMin = 0;
+    adversaryBaseBounds.hMax = 0;
+    adversaryBaseBounds.sMin = 0;
+    adversaryBaseBounds.sMax = 0;
+    adversaryBaseBounds.vMin = 0;
+    adversaryBaseBounds.vMax = 0;
+
+    homeBaseBounds.hMin = 0;
+    homeBaseBounds.hMax = 0;
+    homeBaseBounds.sMin = 0;
+    homeBaseBounds.sMax = 0;
+    homeBaseBounds.vMin = 0;
+    homeBaseBounds.vMax = 0;
 
     double vBat;
 
@@ -112,7 +119,6 @@ int main(int argc, char **argv) {
         cout << "imgProcessing thread launched\n";
     usleep(200000); // wait 200 [ms] to make sure the imgProcessing thread has stopped
 
-    loopStart = true;
     rc = pthread_create(&threads[1], NULL, loop, NULL);
     if (rc) {
         cout << "Error:unable to create thread," << rc << endl;
@@ -157,6 +163,7 @@ void *loop(void *threadArgs) {
     braitenTime = millis();
 
     unsigned int acqFrames = 0;
+    int redPucks = 0, greenPucks = 0;
 
     int const bufferSize = 10;
     Blob blobsBuffer[bufferSize];
@@ -164,127 +171,257 @@ void *loop(void *threadArgs) {
         blobsBuffer[i] = Blob(0, 0, -1, 0);
     }
 
-    while (checkTime() == 0) {
+    while (checkEnd() == 0) {
+
+        if (checkReturnTime()){
+            pthread_mutex_lock(&mutexFindBase);
+            findBase = HOME;
+            pthread_mutex_unlock(&mutexFindBase);
+        }
 
         pthread_mutex_lock(&mutexCount);
         acqFrames = acquiredFrames;
         pthread_mutex_unlock(&mutexCount);
 
         if (acqFrames > processedFrames) {    // New processed image
-
             processedFrames = acqFrames;
 
-            // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
-            pthread_mutex_lock(&mutexBlobs);
+            if (findBase || redPucks == 1 && greenPucks == 1) {   // When there are 4 pucks, go to the base
 
-            Blob *maxG, *maxR, *target;
+                if (redPucks == 1 && greenPucks == 1) {
+                    pthread_mutex_lock(&mutexFindBase);
+                    findBase = HOME;
+                    pthread_mutex_unlock(&mutexFindBase);
 
-            if (processedGreenBlobs.size() > 0) {
-                maxG = &processedGreenBlobs.at(0);  // Get blob with biggest area
-            } else {
-                maxG = new Blob();
-                if (DEBUG)
-                    cout << "No green blobs\n";
-            }
-            if (processedRedBlobs.size() > 0) {
-                maxR = &processedRedBlobs.at(0);  // Get blob with biggest area
-            } else {
-                maxR = new Blob();
-                if (DEBUG)
-                    cout << "No red blobs\n";
-            }
+                    redPucks = 0;   // Reset the puck counters
+                    greenPucks = 0;
 
-            pthread_mutex_unlock(&mutexBlobs);
-
-            target = (maxG->getArea() > maxR->getArea()) ? maxG : maxR;
-
-            for (int i = 1; i < bufferSize; ++i) {
-                blobsBuffer[i] = blobsBuffer[i - 1];
-            }
-            blobsBuffer[0] = *target;
-
-            int i = 0;
-            bool targetFound = false;
-            while (!targetFound && i < bufferSize) {
-                if (blobsBuffer[i].getArea() >= 0)
-                    targetFound = true;
-                else
-                    i++;
-            }
-
-            if (!targetFound) {
-                gearsSpeeds = {0.4, 0.4};
-                continue;
-            }
-
-            target = &blobsBuffer[i];
-
-
-            double dTarget = project(target->getPosX(), target->getPosY());
-
-
-            cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
-            " ,aire " << target->getArea() << " et couleur " << target->getColour() <<
-            " et distance " << dTarget << "\n";
-
-            double speed = 0;
-            if (dTarget > 80) {
-                speed = 1.0;
-            } else if (dTarget > 60) {
-                speed = 0.7;
-            } else if (dTarget > 45) {
-                speed = 0.5;
-            } else if (dTarget > 35) {
-                speed = 0.35;
-                disableBraiten = true;
-
-                if ((target->getPosX() - middleX) < -2) {
-                    if (arduinoComm->prepareLeft())
-                        cout << "Prepared left container\n";
-                    else {
-                        usleep(50); // Wait 50 [us]
-                        arduinoComm->prepareLeft();
+                    // Reset the blobs buffer
+                    for (int j = 0; j < bufferSize; ++j) {
+                        blobsBuffer[j] = Blob(0, 0, -1, 0);
                     }
-                }
-                else {
-                    if (arduinoComm->prepareRight())
-                        cout << "Prepared right container\n";
-                    else {
-                        usleep(50); // Wait 50 [us]
-                        arduinoComm->prepareRight();
+                } else {        // we are in the findBase state
+
+                    // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
+                    pthread_mutex_lock(&mutexBlobs);
+
+                    Blob *base;
+
+                    if (processedGreenBlobs.size() > 0) {
+                        base = &cachedBaseBlobs.at(0);  // Get blob with biggest area
+                    } else {
+                        base = new Blob();
                     }
+
+                    pthread_mutex_unlock(&mutexBlobs);
+
+                    for (int i = 1; i < bufferSize; ++i) {
+                        blobsBuffer[i] = blobsBuffer[i - 1];
+                    }
+                    blobsBuffer[0] = *base;
+
+                    int i = 0;
+                    bool targetFound = false;
+                    while (!targetFound && i < bufferSize) {
+                        if (blobsBuffer[i].getArea() >= 0)
+                            targetFound = true;
+                        else
+                            i++;
+                    }
+
+                    if (!targetFound) {
+                        gearsSpeeds = {0.4, 0.4};
+                        goto braiten;
+                    }
+
+                    base = &blobsBuffer[i];
+
+                    double dTarget = project(base->getPosX(), base->getPosY());
+
+                    cout << "Base found. posX: " << base->getPosX() << " posY: " << base->getPosY() <<
+                    " ,aire " << base->getArea() << " et couleur " << base->getColour()
+                    << " et distance " << dTarget << "\n";
+
+                    double speed = 0;
+                    if (dTarget > 80) {
+                        speed = 1.0;
+                    } else if (dTarget > 60) {
+                        speed = 0.7;
+                    } else if (dTarget > 45) {
+                        speed = 0.5;
+                    } else if (dTarget > 37) {
+                        speed = 0.35;
+                    } else if (dTarget <= 35) {
+                        speed = 0.33;
+
+                        gearsSpeeds = {speed, speed};
+
+                        cout << "Approching base!\n";
+
+                        unsigned int approachTime = millis();
+                        while (millis() - approachTime < 1500 * 1000)    // Approach base for 1500 [ms]
+                            // When reaching the base, we use braitenberg to (quite randomly) position ourselves
+                            if (millis() - braitenTime < BRAITENBERG_RATE)
+                                continue;
+                            else {
+                                braitenTime = millis();
+
+                                sensors = arduinoComm->getData();
+                                while (!sensors.valid) {
+                                    cout << "Error while fetching sensors data ! Trying again in 50 [us].\n";
+                                    usleep(50);
+                                    sensors = arduinoComm->getData();
+                                }
+
+                                braiten(&gearsSpeeds, sensors);
+                                arduinoComm->gearsCommand(gearsSpeeds);
+                            }
+
+                        arduinoComm->gearsCommand({0, 0});
+
+                        arduinoComm->releasePuck();
+
+                        // clear buffer
+                        for (int j = 0; j < bufferSize; ++j) {
+                            blobsBuffer[j] = Blob(0, 0, -1, 0);
+                        }
+
+                        usleep(1500 * 1000);
+
+                        pthread_mutex_lock(&mutexFindBase);
+                        findBase = 0;       // We will again be in the "normal" loop
+                        pthread_mutex_unlock(&mutexFindBase);
+
+                        continue;
+                    }
+
+                    // Base searching
+
+                    gearsSpeeds = {speed, speed};
+                    goto braiten;
                 }
-            } else if (dTarget <= 35) {
-                speed = 0.33;
+            } else {
+
+                //  Puck tracking mode
+
+                // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
+                pthread_mutex_lock(&mutexBlobs);
+
+                Blob *maxG, *maxR, *target;
+
+                if (processedGreenBlobs.size() > 0) {
+                    maxG = &processedGreenBlobs.at(0);  // Get blob with biggest area
+                } else {
+                    maxG = new Blob();
+                    if (DEBUG)
+                        cout << "No green blobs\n";
+                }
+                if (processedRedBlobs.size() > 0) {
+                    maxR = &processedRedBlobs.at(0);  // Get blob with biggest area
+                } else {
+                    maxR = new Blob();
+                    if (DEBUG)
+                        cout << "No red blobs\n";
+                }
+
+                pthread_mutex_unlock(&mutexBlobs);
+
+                target = (maxG->getArea() > maxR->getArea()) ? maxG : maxR;
+
+                for (int i = 1; i < bufferSize; ++i) {
+                    blobsBuffer[i] = blobsBuffer[i - 1];
+                }
+                blobsBuffer[0] = *target;
+
+                int i = 0;
+                bool targetFound = false;
+                while (!targetFound && i < bufferSize) {
+                    if (blobsBuffer[i].getArea() >= 0)
+                        targetFound = true;
+                    else
+                        i++;
+                }
+
+                if (!targetFound) {
+                    gearsSpeeds = {0.4, 0.4};
+                    goto braiten;
+                }
+
+                target = &blobsBuffer[i];
+                double dTarget = project(target->getPosX(), target->getPosY());
+
+                cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
+                " ,aire " << target->getArea() << " et couleur " << target->getColour() <<
+                " et distance " << dTarget << "\n";
+
+                double speed = 0;
+                if (dTarget > 80) {
+                    speed = 1.0;
+                } else if (dTarget > 60) {
+                    speed = 0.7;
+                } else if (dTarget > 45) {
+                    speed = 0.5;
+                } else if (dTarget > 39) {
+                    speed = 0.35;
+                    disableBraiten = true;
+
+                    if (target->getColour() == RED) {
+                        if (target->getColour() == RED) {
+                            if (!arduinoComm->prepareLeft()) {
+                                usleep(50); // Wait 50 [us]
+                                arduinoComm->prepareLeft();
+                            }
+                        }
+                        cout << "Prepared left container for red puck\n";
+                    } else {
+                        if (target->getColour() == RED) {
+                            if (!arduinoComm->prepareRight()) {
+                                usleep(50); // Wait 50 [us]
+                                arduinoComm->prepareRight();
+                            }
+                        }
+                        cout << "Prepared right container for green puck\n";
+                    }
+                } else if (dTarget <= 35) { // Go catch the puck
+
+                    speed = 0.33;
+                    gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
+
+                    arduinoComm->gearsCommand(gearsSpeeds);
+                    usleep(2000 * 1000);
+
+                    arduinoComm->gearsCommand({0, 0});
+
+                    cout << "Catching puck!\n";
+                    arduinoComm->catchPuck();
+
+                    if (target->getColour() == RED) {
+                        leftContainer[redPucks++] = RED;
+                    } else {
+                        rightContainer[greenPucks++] = GREEN;
+                    }
+
+                    for (int j = 0; j < bufferSize; ++j) {
+                        blobsBuffer[j] = Blob(0, 0, -1, 0);
+                    }
+
+                    usleep(3000 * 1000);        // Freeze for 3 [s] when grabbing puck
+
+                    disableBraiten = false;
+
+                    continue;
+                }
 
                 gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
 
-                arduinoComm->gearsCommand(gearsSpeeds);
-                usleep(2000 * 1000);
-
-                arduinoComm->gearsCommand({0, 0});
-
-                cout << "Catching puck!\n";
-                arduinoComm->catchPuck();
-
-
-                for (int j = 0; j < bufferSize; ++j) {
-                    blobsBuffer[j] = Blob(0, 0, -1, 0);
-                }
-
-                usleep(3000 * 1000);
-
-                disableBraiten = false;
-
-                continue;
             }
 
-            gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
-
             cout << "Number of processed frames : " << processedFrames << "\n";
+
         }
 
-        if (millis() - braitenTime < 500)
+        braiten:
+        if (millis() - braitenTime < BRAITENBERG_RATE)
             continue;
         else {
 
@@ -312,8 +449,12 @@ void *loop(void *threadArgs) {
     pthread_exit(NULL);
 }
 
-int checkTime() {
-    return (millis() - startTime) > 80 * 1000;
+int checkEnd() {
+    return (millis() - startTime) > 119 * 1000;
+}
+
+int checkReturnTime() {
+    return (millis() - startTime) > 90 * 1000;
 }
 
 void *imgProc(void *threadArgs) {
@@ -324,14 +465,48 @@ void *imgProc(void *threadArgs) {
         //createTrackbars(whiteBoardBounds, "WhiteBoard bounds");
     }
 
+    int findBaseCached;
+
     while (!endImgProc) {
+
+        pthread_mutex_lock(&mutexFindBase);
+        findBaseCached = findBase;
+        pthread_mutex_unlock(&mutexFindBase);
 
         capImage();
 
-        // Code to detect the board!
+        if (findBaseCached) {
+
+            if (findBaseCached == HOME) {
+                baseImgProcess(homeBaseBounds, hsv, filtered);
+                detectObjects(baseBlobs, filtered, HOME);
+            } else {
+                baseImgProcess(homeBaseBounds, hsv, filtered);
+                detectObjects(baseBlobs, filtered, ADVERSARY);
+            }
+
+            sort(baseBlobs.begin(), baseBlobs.end(), compBlobs);
+
+            // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
+            pthread_mutex_lock(&mutexBlobs);
+
+            cachedBaseBlobs = baseBlobs;
+
+            // unlock variables
+            pthread_mutex_unlock(&mutexBlobs);
+
+
+            // lock & unlock the counter
+            pthread_mutex_lock(&mutexCount);
+            acquiredFrames++;
+            pthread_mutex_unlock(&mutexCount);
+
+        } else {
+
+            // Code to detect the board!
 /*
         Mat whiteBoardFiltered;
-        imgProcess(whiteBoardBounds, hsv, whiteBoardFiltered);
+        puckImgProcess(whiteBoardBounds, hsv, whiteBoardFiltered);
         imshow("whiteBoard filtered", whiteBoardFiltered);
 
         RotatedRect board;
@@ -357,33 +532,35 @@ void *imgProc(void *threadArgs) {
             line(img, rect_points[j], rect_points[(j + 1) % 4], color, 1, 8);
 */
 
-        if (CALIB) {
-            //imshow("camera", img);
-            imshow("HSV image", hsv);
-        }
+            if (CALIB) {
+                //imshow("camera", img);
+                imshow("HSV image", hsv);
+            }
 //
 
-        capBlobs();
+            capBlobs();
 
-        sort(redBlobs.begin(), redBlobs.end(), compBlobs);
-        sort(greenBlobs.begin(), greenBlobs.end(), compBlobs);
+            sort(redBlobs.begin(), redBlobs.end(), compBlobs);
+            sort(greenBlobs.begin(), greenBlobs.end(), compBlobs);
 
-        // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
-        pthread_mutex_lock(&mutexBlobs);
+            // Lock variables to prevent (and ensure) that the blobs aren't being modified by another thread
+            pthread_mutex_lock(&mutexBlobs);
 
-        processedRedBlobs = redBlobs;
-        processedGreenBlobs = greenBlobs;
+            processedRedBlobs = redBlobs;
+            processedGreenBlobs = greenBlobs;
 
-        // unlock variables
-        pthread_mutex_unlock(&mutexBlobs);
+            // unlock variables
+            pthread_mutex_unlock(&mutexBlobs);
 
-        // lock & unlock the counter
-        pthread_mutex_lock(&mutexCount);
-        acquiredFrames++;
-        pthread_mutex_unlock(&mutexCount);
+            // lock & unlock the counter
+            pthread_mutex_lock(&mutexCount);
+            acquiredFrames++;
+            pthread_mutex_unlock(&mutexCount);
 
-        if (CALIB)
-            waitKey(50);
+            if (CALIB)
+                waitKey(50);
+
+        }
     }
 
     cout << "Image processing thread cleanly closed\n";
@@ -393,13 +570,13 @@ void *imgProc(void *threadArgs) {
 
 void capBlobs() {
 
-    imgProcess(hsvBoundsRed, hsv, filtered);
+    puckImgProcess(hsvBoundsRed, hsv, filtered);
     detectObjects(redBlobs, filtered, RED);
     if (CALIB)
         imshow("Red filtered", filtered);
 
 
-    imgProcess(hsvBoundsGreen, hsv, filtered);
+    puckImgProcess(hsvBoundsGreen, hsv, filtered);
     detectObjects(greenBlobs, filtered, GREEN);
     if (CALIB)
         imshow("Green filtered", filtered);

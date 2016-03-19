@@ -173,3 +173,17 @@ int arduinoComm::start() {
     else
         return 0;
 }
+
+bool arduinoComm::releasePuck() {
+
+    readData = spiCom->CS0_transfer('H');
+    if (readData != 'h') {
+        cerr << "Protocol handshake error!\n";
+        cerr << "Received: " << readData << "\n";
+        return false;
+    }
+
+    spiCom->CS0_transfer('F');  // tell the arduino to free the pucks !
+
+    return true;
+}

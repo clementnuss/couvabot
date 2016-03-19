@@ -110,14 +110,30 @@ bool filterBoard(HSVbounds hsvBounds, Mat binaryImage, RotatedRect &board) {
     }
 }
 
-void imgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered) {
+void puckImgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered) {
     inRange(hsv,
             Scalar(hsvBounds.hMin, hsvBounds.sMin, hsvBounds.vMin),
             Scalar(hsvBounds.hMax, hsvBounds.sMax, hsvBounds.vMax),
             filtered);
 
     Mat erodeElement = getStructuringElement(MORPH_ELLIPSE, Size(2, 2));
-    Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(9, 9));
+    Mat dilateElement = getStructuringElement(MORPH_ELLIPSE, Size(8, 8));
+
+    erode(filtered, filtered, erodeElement);
+    erode(filtered, filtered, erodeElement);
+
+    dilate(filtered, filtered, dilateElement);
+    dilate(filtered, filtered, dilateElement);
+}
+
+void baseImgProcess(HSVbounds hsvBounds, Mat &hsv, Mat &filtered) {
+    inRange(hsv,
+            Scalar(hsvBounds.hMin, hsvBounds.sMin, hsvBounds.vMin),
+            Scalar(hsvBounds.hMax, hsvBounds.sMax, hsvBounds.vMax),
+            filtered);
+
+    Mat erodeElement = getStructuringElement(MORPH_RECT, Size(5, 5));
+    Mat dilateElement = getStructuringElement(MORPH_RECT, Size(7, 7));
 
     erode(filtered, filtered, erodeElement);
     erode(filtered, filtered, erodeElement);

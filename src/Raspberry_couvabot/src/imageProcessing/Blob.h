@@ -6,7 +6,7 @@
 #define OPENCV_BLOB_H
 
 enum {
-    GREEN = 1, RED = 2
+    GREEN = 1, RED = 2, HOME = 10, ADVERSARY = 11
 };
 
 class Blob {

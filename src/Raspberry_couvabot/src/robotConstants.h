@@ -12,10 +12,12 @@ struct HSVbounds {
 };
 
 
-#define RPI true
+#define RPI false
 #define CALIB false
 #define DEBUG false
 #define WITE_BOARD false
+
+#define BRAITENBERG_RATE 100
 
 
 // Coefficients of the distance approximation polynomial
