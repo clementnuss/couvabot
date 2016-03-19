@@ -6,6 +6,7 @@
  * sum(sensors) < threshold_B; with threshold_B < threshold_A.
  */
 
+#include <math.h>
 #include "braitenberg.h"
 
 #define NB_IR_SENSORS 8        // Number of IR sensors
@@ -17,8 +18,13 @@
 // speeds, these will be updated according to IR sensors.
 void braiten(gearsPower *powers, ardCom::sensorsData sens) {
     // Braitenberg coefficients for left and right wheels if MAX_SPEED == 1
-    static double l_weight[NB_IR_SENSORS] = {-0.1875, -0.125, -0.0625, 0, 0.0625, 0.125, 0.1875, 0.625};
-    static double r_weight[NB_IR_SENSORS] = {0.625, 0.1875, 0.1125, 0.05, 0, -0.05, -0.125, -0.1875};
+    static double l_weight[NB_IR_SENSORS] = {-1.5, -0.6, 0.3, 0, 0, 0, 0, 0};
+    static double r_weight[NB_IR_SENSORS] = {0, 0, 0, 0, 0, 0.3, -0.6, -1.5};
+
+/*
+    static double l_weight[NB_IR_SENSORS] = {-0.375, -0.25, -0.125, 0, 0.03125, 0.0625, 0.09375, 0.3125};
+    static double r_weight[NB_IR_SENSORS] = {0.3125, 0.09375, 0.05625, 0.025, 0, -0.1, -0.25, -0.375};
+*/
 
     // Distance sensors
 
@@ -44,9 +50,9 @@ void braiten(gearsPower *powers, ardCom::sensorsData sens) {
 
     // Bound speeds
     double reduction_factor;
-    if (right_speed > 1. || left_speed > 1.) {
+    if (fabs(right_speed) > 1. || fabs(left_speed) > 1.) {
         // Determine biggest reduction factor
-        if (right_speed > left_speed)
+        if (fabs(right_speed) > fabs(left_speed))
             reduction_factor = right_speed;
         else
             reduction_factor = left_speed;
@@ -55,6 +61,8 @@ void braiten(gearsPower *powers, ardCom::sensorsData sens) {
         left_speed /= reduction_factor;
         right_speed /= reduction_factor;
     }
+
+    cout << "left speed: " << left_speed << " and right speed: " << right_speed << "\n";
 
     // Update wheel speeds
     powers->pL = left_speed;

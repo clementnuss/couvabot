@@ -34,4 +34,6 @@ void * loop(void *threadArgs);
 
 void * imgProc(void *threadArgs);
 
+void * braitenberg(void *threadArgs);
+
 #endif //COUVABOT_MAIN_H

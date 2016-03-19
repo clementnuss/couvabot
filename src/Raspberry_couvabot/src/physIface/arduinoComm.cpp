@@ -59,14 +59,14 @@ bool arduinoComm::gearsCommand(gearsPower power) {
         return false;
     }
 
-    readData = spiCom->CS0_transfer(getPWM(power.pL));
+    readData = spiCom->CS0_transfer(pwmL);
     if (readData != 'o') {
         cerr << "Protocol error after having sent pL\n";
         cerr << "Received: " << readData << "\n";
         return false;
     }
 
-    readData = spiCom->CS0_transfer(getPWM(power.pR));
+    readData = spiCom->CS0_transfer(pwmR);
     if (readData != 'k') {
         cerr << "Protocol error after having sent pR\n";
         cerr << "Received: " << readData << "\n";

@@ -11,7 +11,6 @@
 #include "imageProcessing/detectObjects.h"
 #include "physIface/arduinoComm.h"
 #include "physIface/localTime.h"
-#include "navigation/Trajectory.h"
 #include "navigation/differentialDrive.h"
 #include "navigation/braitenberg.h"
 
@@ -20,15 +19,16 @@ using namespace std;
 GenericCam *cam;
 HSVbounds hsvBoundsGreen, hsvBoundsRed, whiteBoardBounds;
 ardCom::arduinoComm *arduinoComm;
-Trajectory trajectory;
 SPICom *spiCom;
 Mat img, hsv, filtered;
 vector <Blob> redBlobs, greenBlobs, processedRedBlobs, processedGreenBlobs;
 
-pthread_mutex_t mutexBlobs, mutexCount;
-bool endImgProc, loopStart;
+gearsPower gearsSpeeds({0, 0});
 
-unsigned int acquiredFrames, processedFrames;
+pthread_mutex_t mutexBlobs, mutexCount;
+bool endImgProc, loopStart, disableBraiten;
+
+unsigned int acquiredFrames, processedFrames, braitenTime;
 unsigned startTime;
 
 int checkTime();
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
         exit(-1);
     } else
         cout << "imgProcessing thread launched\n";
-    usleep(500000); // wait 500 [ms] to make sure the imgProcessing thread has stopped
+    usleep(200000); // wait 200 [ms] to make sure the imgProcessing thread has stopped
 
     loopStart = true;
     rc = pthread_create(&threads[1], NULL, loop, NULL);
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
         exit(-1);
     } else
         cout << "loop thread launched\n";
-    usleep(500000); // wait 500 [ms] to sure the loop thread has stopped
+    usleep(200000); // wait 200 [ms] to sure the loop thread has stopped
 
     int tmp = 0;
     scanf("%d", &tmp);
@@ -153,7 +153,8 @@ void *loop(void *threadArgs) {
     cout << "Start signal received !\n";
     startTime = millis();
 
-    gearsPower gearsSpeeds({0, 0});
+    ardCom::sensorsData sensors;
+    braitenTime = millis();
 
     unsigned int acqFrames = 0;
 
@@ -212,8 +213,7 @@ void *loop(void *threadArgs) {
             }
 
             if (!targetFound) {
-                //arduinoComm->gearsCommand({0, 0});
-                //cout << "No target found\n";
+                gearsSpeeds = {0.4, 0.4};
                 continue;
             }
 
@@ -224,16 +224,20 @@ void *loop(void *threadArgs) {
 
 
             cout << "Target found. posX: " << target->getPosX() << " posY: " << target->getPosY() <<
-            " ,aire " << target->getArea() << " et couleur " << target->getColour() << " et distance " << dTarget <<
-            "\n";
+            " ,aire " << target->getArea() << " et couleur " << target->getColour() <<
+            " et distance " << dTarget << "\n";
 
             double speed = 0;
             if (dTarget > 80) {
                 speed = 1.0;
             } else if (dTarget > 60) {
                 speed = 0.7;
+            } else if (dTarget > 45) {
+                speed = 0.5;
             } else if (dTarget > 35) {
                 speed = 0.35;
+                disableBraiten = true;
+
                 if ((target->getPosX() - middleX) < -2) {
                     if (arduinoComm->prepareLeft())
                         cout << "Prepared left container\n";
@@ -252,11 +256,13 @@ void *loop(void *threadArgs) {
                 }
             } else if (dTarget <= 35) {
                 speed = 0.33;
+
                 gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
+
                 arduinoComm->gearsCommand(gearsSpeeds);
                 usleep(2000 * 1000);
 
-                arduinoComm->gearsCommand({0,0});
+                arduinoComm->gearsCommand({0, 0});
 
                 cout << "Catching puck!\n";
                 arduinoComm->catchPuck();
@@ -268,28 +274,36 @@ void *loop(void *threadArgs) {
 
                 usleep(3000 * 1000);
 
+                disableBraiten = false;
+
                 continue;
             }
 
-
             gearsSpeeds = getDiffParams(target->getPosX(), target->getPosY(), speed);
-
-            ardCom::sensorsData sensors;
-
-            sensors = arduinoComm->getData();
-            while (!sensors.valid) {
-                cout << "Error while fetching sensors data ! Trying again in 50 [us].\n";
-                usleep(50);
-                sensors = arduinoComm->getData();
-            }
-
-
-            braiten(&gearsSpeeds, sensors);
-
-            arduinoComm->gearsCommand(gearsSpeeds);
 
             cout << "Number of processed frames : " << processedFrames << "\n";
         }
+
+        if (millis() - braitenTime < 500)
+            continue;
+        else {
+
+            if (!disableBraiten) {
+                braitenTime = millis();
+
+                sensors = arduinoComm->getData();
+                while (!sensors.valid) {
+                    cout << "Error while fetching sensors data ! Trying again in 50 [us].\n";
+                    usleep(50);
+                    sensors = arduinoComm->getData();
+                }
+
+                braiten(&gearsSpeeds, sensors);
+                arduinoComm->gearsCommand(gearsSpeeds);
+            }
+        }
+
+
     }
 
     arduinoComm->gearsCommand({0, 0});
