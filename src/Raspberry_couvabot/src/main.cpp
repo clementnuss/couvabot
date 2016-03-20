@@ -164,28 +164,32 @@ void *loop(void *threadArgs) {
         blobsBuffer[i] = Blob(0, 0, -1, 0);
     }
 
+    arduinoComm->gearsCommand({0, 0});
+
     spiCom->CS0_transfer('S');
     usleep(50);
 
-    while (arduinoComm->start() != 1){
-        usleep(1000); // Waiting the start signal
+    while (arduinoComm->start() == 0){
+        // Waiting the start signal
     }
 
+    cout << "Recu\n\n";
     startTime = millis();
 
     pthread_mutex_lock(&mutexFindBase);
     findBase = BASE1;
     pthread_mutex_unlock(&mutexFindBase);
 
-    arduinoComm->gearsCommand({0.3, 0.3});
-    usleep(1000 * 1000);    // Go forward for 1000 [ms]
+    cout << "Sending 0.5,0.5\n";
+    arduinoComm->gearsCommand({0.5, 0.5});
+    usleep(3000 * 1000);    // Go forward for 1300 [ms]
 
-    arduinoComm->gearsCommand({-0.2, 0.2});
-    usleep(200 * 1000);    // 180° turn [ms]
+    arduinoComm->gearsCommand({-0.6, 0.6});
+    usleep(3000 * 1000);    // 180° turn [ms]
     arduinoComm->gearsCommand({0, 0});
 
 
-    while (millis() - startTime < 2500) {
+    while (millis() - startTime < 7000) {
         pthread_mutex_lock(&mutexCount);
         acqFrames = acquiredFrames;
         pthread_mutex_unlock(&mutexCount);
@@ -219,9 +223,11 @@ void *loop(void *threadArgs) {
 
     findBase = 0;
 
-    start:
-    cout << "Start signal received !\n";
+    arduinoComm->gearsCommand({-0.6, 0.6});
+    usleep(1500 * 1000);    // 180° turn [ms]
+    gearsSpeeds = {1,1};
 
+    start:
     while (checkEnd() == 0) {
 
         if (checkReturnTime()) {
@@ -428,7 +434,7 @@ void *loop(void *threadArgs) {
                                 findBase = home;
                                 pthread_mutex_unlock(&mutexFindBase);
                                 cout << "Container full -> go home";
-                                continue;
+                                goto braiten;
                             }
 
                         } else {
@@ -447,7 +453,7 @@ void *loop(void *threadArgs) {
                                 findBase = home;
                                 pthread_mutex_unlock(&mutexFindBase);
                                 cout << "Container full -> go home";
-                                continue;
+                                goto braiten;
                             }
 
                         } else {
@@ -500,7 +506,6 @@ void *loop(void *threadArgs) {
         if (millis() - braitenTime < BRAITENBERG_RATE)
             continue;
         else {
-
             if (!disableBraiten) {
                 braitenTime = millis();
 #if RPI

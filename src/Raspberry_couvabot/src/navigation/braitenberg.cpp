@@ -28,6 +28,11 @@ void braiten(gearsPower *powers, ardCom::sensorsData sens) {
 
     // Distance sensors
 
+    for (int j = 0; j < 8; ++j) {
+        printf("%ud \t",sens.values[j]);
+    }
+    cout << endl;
+
     // Get distance sensors
     int i;
 

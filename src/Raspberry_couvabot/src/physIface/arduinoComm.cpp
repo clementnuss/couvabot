@@ -170,8 +170,11 @@ int arduinoComm::start() {
 
     readData = spiCom->CS0_transfer('Z');
 
-    if (readData == 's')    // if there is an 's', we start !
+    if (readData == 's') {  // if there is an 's', we start !
+        cout << "START !\n";
+        readData = spiCom->CS0_transfer('E');
         return 1;
+    }
     else
         return 0;
 }
