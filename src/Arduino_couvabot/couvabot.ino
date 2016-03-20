@@ -66,6 +66,12 @@ void setup() {
     backServoL.reset();
     backServoR.reset();
 
+
+    backServoR.writePos(B_R_START);
+    backServoR.updatePos();
+    backServoL.writePos(B_L_START);
+    backServoL.updatePos();
+
     // SERVO TEST
 /*
     servoPrepare(M_RIGHT);
@@ -99,6 +105,8 @@ void loop() {
             startLoop = false;
             //SPDR = 's'; // start
              startSignalChar = 's';
+            backServoL.reset();
+            backServoR.reset();
         } else {
             //SPDR = 'w'; // wait
              startSignalChar = 'w';
