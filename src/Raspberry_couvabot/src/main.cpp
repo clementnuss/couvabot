@@ -34,22 +34,6 @@ unsigned startTime;
 int leftContainer[2], rightContainer[2];
 
 int main(int argc, char **argv) {
-/*
-    // With light
-    hsvBoundsRed.hMin = 0;
-    hsvBoundsRed.hMax = 8;
-    hsvBoundsRed.sMin = 115;
-    hsvBoundsRed.sMax = 206;
-    hsvBoundsRed.vMin = 117;
-    hsvBoundsRed.vMax = 182;
-
-    hsvBoundsGreen.hMin = 58;
-    hsvBoundsGreen.hMax = 79;
-    hsvBoundsGreen.sMin = 24;
-    hsvBoundsGreen.sMax = 100;
-    hsvBoundsGreen.vMin = 43;
-    hsvBoundsGreen.vMax = 95;
-*/
 
     hsvBoundsRed.hMin = 0;
     hsvBoundsRed.hMax = 21;
@@ -65,15 +49,7 @@ int main(int argc, char **argv) {
     base1Bounds.vMin = 0;
     base1Bounds.vMax = 360;
 
-    base2Bounds.hMin = 0;
-    base2Bounds.hMax = 180;
-    base2Bounds.sMin = 0;
-    base2Bounds.sMax = 360;
-    base2Bounds.vMin = 0;
-    base2Bounds.vMax = 360;
-
     double vBat;
-
 
     if (argc > 1) {
         vBat = strtod(argv[1], NULL);
@@ -93,7 +69,6 @@ int main(int argc, char **argv) {
         }
     }
 
-
     initialiseEpoch();
 
     acquiredFrames = 0;
@@ -102,7 +77,6 @@ int main(int argc, char **argv) {
     arduinoComm = new ardCom::arduinoComm(spiCom, vBat);
     arduinoComm->gearsCommand({0, 0});
 
-    ardCom::sensorsData sensors;
     startTime = millis();
 
     // initialize the camera
@@ -113,19 +87,19 @@ int main(int argc, char **argv) {
     pthread_t threads[3];
     rc = pthread_create(&threads[0], NULL, imgProc, NULL);
     if (rc) {
-        cout << "Error:unable to create thread," << rc << endl;
+        cout << "Error:unable to create the image processing thread. error code: " << rc << endl;
         exit(-1);
     } else
-        cout << "imgProcessing thread launched\n";
-    usleep(200000); // wait 200 [ms] to make sure the imgProcessing thread has stopped
+        cout << "image processing thread launched\n";
+    usleep(200000); // wait 200 [ms] to make sure the imgProcessing thread has started
 
-    rc = pthread_create(&threads[1], NULL, loop, NULL);
+    rc = pthread_create(&threads[1], NULL, control, NULL);
     if (rc) {
-        cout << "Error:unable to create thread," << rc << endl;
+        cout << "Error:unable to create the control thread. error code: " << rc << endl;
         exit(-1);
     } else
-        cout << "loop thread launched\n";
-    usleep(200000); // wait 200 [ms] to sure the loop thread has stopped
+        cout << "control thread launched\n";
+    usleep(200000); // wait 200 [ms] to sure the control thread has started
 
     int tmp = 0;
     scanf("%d", &tmp);
@@ -134,10 +108,9 @@ int main(int argc, char **argv) {
     endImgProc = true;
 
     pthread_cancel(threads[0]); // End the image processing thread
-    pthread_cancel(threads[1]); // End the loop thread
+    pthread_cancel(threads[1]); // End the control thread
 
     arduinoComm->gearsCommand({0, 0});
-
 
     if (RPI) {
         bcm2835_spi_end();
@@ -147,49 +120,51 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void *loop(void *threadArgs) {
+void *control(void *threadArgs) {
 
     int const middleX = FRAME_WIDTH / 2;
 
     ardCom::sensorsData sensors;
-    braitenTime = millis();
+    braitenTime = millis(); // records the last moment the braitenberg algorithm was executed
     int catchState = 0;
 
     unsigned int acqFrames = 0;
     int leftPucks = 0, rightPucks = 0;
 
     int const bufferSize = 10;
-    Blob blobsBuffer[bufferSize];
+    Blob blobsBuffer[bufferSize];   // buffer, in order to compensate for non detection of the blobs on certain frames
     for (int i = 0; i < bufferSize; ++i) {
         blobsBuffer[i] = Blob(0, 0, -1, 0);
     }
 
-    arduinoComm->gearsCommand({0, 0});
-
+    // Start sequence : wait the start signal from the arduino
     spiCom->CS0_transfer('S');
     usleep(50);
 
-    while (arduinoComm->start() == 0){
+    while (arduinoComm->start() == 0) {
         // Waiting the start signal
     }
 
-    cout << "Recu\n\n";
+    cout << "Start signal received\n\n";
     startTime = millis();
 
+
+    /**
+
+     Base detection proces.
+
     pthread_mutex_lock(&mutexFindBase);
-    findBase = BASE1;
+    findBase = BASE1;   // Tells the image processing thread to look for the first registered colour.
     pthread_mutex_unlock(&mutexFindBase);
 
-    cout << "Sending 0.5,0.5\n";
     arduinoComm->gearsCommand({0.5, 0.5});
-    usleep(3000 * 1000);    // Go forward for 1300 [ms]
+    usleep(3000 * 1000);    // Go forward for 3000 [ms]
 
     arduinoComm->gearsCommand({-0.6, 0.6});
-    usleep(3000 * 1000);    // 180° turn [ms]
+    usleep(3000 * 1000);    // 180° turn for 3000 [ms]
     arduinoComm->gearsCommand({0, 0});
 
-
-    while (millis() - startTime < 7000) {
+    while (millis() - startTime < 7000) {   // Wait for 7 seconds in order to find the base
         pthread_mutex_lock(&mutexCount);
         acqFrames = acquiredFrames;
         pthread_mutex_unlock(&mutexCount);
@@ -206,7 +181,6 @@ void *loop(void *threadArgs) {
             } else {
                 base = new Blob();
             }
-
             pthread_mutex_unlock(&mutexBlobs);
 
             if (base->getArea() >= 2500){
@@ -214,21 +188,17 @@ void *loop(void *threadArgs) {
                 goto start;
             }
         }
-
     }
 
     if (!home) {
         home = BASE2;
     }
+     */
 
     findBase = 0;
 
-    arduinoComm->gearsCommand({-0.6, 0.6});
-    usleep(1500 * 1000);    // 180° turn [ms]
-    gearsSpeeds = {1,1};
-
     start:
-    while (checkEnd() == 0) {
+    while (!checkEnd()) {
 
         if (checkReturnTime()) {
             pthread_mutex_lock(&mutexFindBase);
@@ -244,7 +214,7 @@ void *loop(void *threadArgs) {
             processedFrames = acqFrames;
 
             if (findBase || (leftPucks == 1 && rightPucks == 1)) {   // When there are 4 pucks, go to the base
-
+/*
                 if (leftPucks == 1 && rightPucks == 1) {
                     pthread_mutex_lock(&mutexFindBase);
                     findBase = home;
@@ -263,7 +233,6 @@ void *loop(void *threadArgs) {
                     pthread_mutex_lock(&mutexBlobs);
 
                     Blob *base;
-
                     if (processedGreenBlobs.size() > 0) {
                         base = &cachedBaseBlobs.at(0);  // Get blob with biggest area
                     } else {
@@ -358,6 +327,7 @@ void *loop(void *threadArgs) {
                     gearsSpeeds = {speed, speed};
                     goto braiten;
                 }
+                */
             } else {
 
                 //  Puck tracking mode

@@ -11,7 +11,7 @@
 using namespace ardCom;
 
 arduinoComm::arduinoComm(SPICom *spiCom, double vBat) {
-    maxPWM = (int) ((2.5 * 255) / vBat);
+    maxPWM = (int) ((5 * 255) / vBat);
     this->spiCom = spiCom;
 
     pollTime = 0;

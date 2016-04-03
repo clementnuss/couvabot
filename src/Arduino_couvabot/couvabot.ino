@@ -144,7 +144,6 @@ void spiHandler() {
                 initSPI();
             } else if (SPDR == 'Z'){
                  SPDR = startSignalChar;
-                 initSPI();
             } else
                 initSPI();
             break;
@@ -474,6 +473,6 @@ void get_ir_sensors() {
     // Read sensors
     for (uint8_t i = 0; i < 8; i++) {
         sensor[i] = analogRead(i);
-        ir_sensor[i] = (uint8_t) round(sensor[i] * (255. / MAX_IR_SENSOR_VALUE));
+        ir_sensor[i] = sensor[i] * (255. / MAX_IR_SENSOR_VALUE);
     }
 }

@@ -17,8 +17,6 @@ struct HSVbounds {
 #define DEBUG false
 #define WITE_BOARD false
 
-#define BRAITENBERG_RATE 500
-
 
 // Coefficients of the distance approximation polynomial
 #define x_5 766.803126447968

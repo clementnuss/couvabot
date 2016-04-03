@@ -11,6 +11,8 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#define BRAITENBERG_RATE 500
+
 #if CALIB
 #include <opencv2/highgui/highgui.hpp>
 #endif
@@ -30,12 +32,21 @@ void capImage();
 
 int main(int argc, char **argv);
 
-void *loop(void *threadArgs);
+void *control(void *threadArgs);
 
 void *imgProc(void *threadArgs);
 
+/*
+ * Returns 1 when the return time is reached
+ */
+
 int checkReturnTime();
+
+/*
+ * Returns 1 when the time limit is reached
+ */
 
 int checkEnd();
 
-#endif //COUVABOT_MAIN_H
+#endif
+//COUVABOT_MAIN_H

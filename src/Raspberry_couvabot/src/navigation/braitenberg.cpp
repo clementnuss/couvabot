@@ -17,14 +17,9 @@
 // Exemplary function: run braiten providing the variable for left and right wheel_speed
 // speeds, these will be updated according to IR sensors.
 void braiten(gearsPower *powers, ardCom::sensorsData sens) {
-    // Braitenberg coefficients for left and right wheels if MAX_SPEED == 1
-    static double l_weight[NB_IR_SENSORS] = {-1.5, -0.6, 0.3, 0, 0, 0, 0, 0};
-    static double r_weight[NB_IR_SENSORS] = {0, 0, 0, 0, 0, 0.3, -0.6, -1.5};
-
-/*
+    // Braitenberg coefficients for left and right wheels
     static double l_weight[NB_IR_SENSORS] = {-0.375, -0.25, -0.125, 0, 0.03125, 0.0625, 0.09375, 0.3125};
     static double r_weight[NB_IR_SENSORS] = {0.3125, 0.09375, 0.05625, 0.025, 0, -0.1, -0.25, -0.375};
-*/
 
     // Distance sensors
 

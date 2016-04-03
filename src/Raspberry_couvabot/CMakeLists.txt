@@ -8,8 +8,8 @@ if (UNIX)
     find_package(OpenCV REQUIRED)
     find_package(raspicam REQUIRED)
 elseif (WIN32)
-    find_package(OpenCV REQUIRED)
     set(OpenCV_DIR "C:\\OpenCV\\opencv-2.4.11")
+    find_package(OpenCV REQUIRED)
 endif ()
 
 
