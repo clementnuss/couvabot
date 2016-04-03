@@ -35,19 +35,19 @@ int leftContainer[2], rightContainer[2];
 
 int main(int argc, char **argv) {
 
-    hsvBoundsRed.hMin = 0;
+    hsvBoundsRed.hMin = 11;
     hsvBoundsRed.hMax = 21;
-    hsvBoundsRed.sMin = 149;
-    hsvBoundsRed.sMax = 224;
-    hsvBoundsRed.vMin = 106;
-    hsvBoundsRed.vMax = 217;
+    hsvBoundsRed.sMin = 63;
+    hsvBoundsRed.sMax = 97;
+    hsvBoundsRed.vMin = 113;
+    hsvBoundsRed.vMax = 142;
 
-    base1Bounds.hMin = 0;
+   /* base1Bounds.hMin = 0;
     base1Bounds.hMax = 180;
     base1Bounds.sMin = 0;
     base1Bounds.sMax = 360;
     base1Bounds.vMin = 0;
-    base1Bounds.vMax = 360;
+    base1Bounds.vMax = 360;*/
 
     double vBat;
 
@@ -137,6 +137,7 @@ void *control(void *threadArgs) {
         blobsBuffer[i] = Blob(0, 0, -1, 0);
     }
 
+/*
     // Start sequence : wait the start signal from the arduino
     spiCom->CS0_transfer('S');
     usleep(50);
@@ -146,6 +147,8 @@ void *control(void *threadArgs) {
     }
 
     cout << "Start signal received\n\n";
+*/
+
     startTime = millis();
 
 
@@ -512,10 +515,10 @@ int checkReturnTime() {
 void *imgProc(void *threadArgs) {
 
     if (CALIB) {
-        createTrackbars(hsvBoundsGreen, "Green Trackbars");
         createTrackbars(hsvBoundsRed, "Red Trackbars");
-        createTrackbars(base1Bounds, "Base 1 bounds");
-        createTrackbars(base2Bounds, "Base 2 bounds");
+//        createTrackbars(hsvBoundsGreen, "Green Trackbars");
+//        createTrackbars(base1Bounds, "Base 1 bounds");
+//        createTrackbars(base2Bounds, "Base 2 bounds");
     }
 
     int findBaseCached;
@@ -607,11 +610,12 @@ void capBlobs() {
         imshow("Red filtered", filtered);
 
 
+    /*
     puckImgProcess(hsvBoundsGreen, hsv, filtered);
     detectObjects(greenBlobs, filtered, GREEN);
     if (CALIB)
         imshow("Green filtered", filtered);
-
+    */
 }
 
 void capImage() {
