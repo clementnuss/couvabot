@@ -65,7 +65,7 @@ void GenericCam::read(cv::Mat &image) {
 }
 
 /*
- * Uses a polygon (of order 5) to approximate the distance in the middle of the image
+ * Uses a polynomial (of order 5) to approximate the distance in the middle of the image
  */
 
 double project(int x, int y) {
