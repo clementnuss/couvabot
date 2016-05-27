@@ -23,11 +23,11 @@ It then brings the stacked cylinders (2 maximum per container) back to its "home
 
 ### How the robot works :
 
-There are tow microcontrollers on the robot : a Raspberry Pi 2 and an Arduino Mega.
+There are two microcontrollers on the robot : a Raspberry Pi 2 and an Arduino Mega.
 
 #### The Raspberry
 
-It runs tow threads simultaneously :
+It runs two threads simultaneously :
 1. The first thread keeps track of the remaining time, of the cylinder(s) that the robot already carries, and it basically takes the decisions for all of the robots movements (displacement of the robot, catching of the cylinders when they are close enough, choice of the first or second loading lane, opening of the containers when "at home", ...) given information from the second thread and from the Arduino: it performs a Braitenberg obstacle avoidance based on IR sensors connected to the Arduino
 2. The second thread does a visual scanning of its environment using a USB webcam: it converts the colors to the HSV color space and detects the possible cylinder candidates.
 
